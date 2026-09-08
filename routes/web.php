@@ -1,20 +1,57 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/login', [AuthController::class, 'showLogin'])
+    ->name('login');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
+Route::post('/login', [AuthController::class, 'login'])
+    ->name('login.process');
 
-require __DIR__.'/auth.php';
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
+
+
+/*
+|--------------------------------------------------------------------------
+| Dashboard Kabag
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/dashboard/kabag', function () {
+    return view('dashboard.kabag');
+})
+    ->middleware(['auth', 'role:kabag'])
+    ->name('dashboard.kabag');
+
+
+/*
+|--------------------------------------------------------------------------
+| Dashboard Staff
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/dashboard/staff', function () {
+    return view('dashboard.staff');
+})
+    ->middleware(['auth', 'role:staff'])
+    ->name('dashboard.staff');
+
+
+/*
+|--------------------------------------------------------------------------
+| Dashboard Intern
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/dashboard/intern', function () {
+    return view('dashboard.intern');
+})
+    ->middleware(['auth', 'role:intern'])
+    ->name('dashboard.intern');
