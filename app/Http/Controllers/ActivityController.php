@@ -8,22 +8,63 @@ use Illuminate\Http\Request;
 
 class ActivityController extends Controller
 {
-    /**
-     * Menampilkan daftar kegiatan.
-     */
     public function index()
     {
         $activities = Activity::with(['creator', 'pics'])
-            ->orderBy('activity_date', 'desc')
+            ->orderBy('activity_date', 'asc')
             ->orderBy('start_time', 'asc')
             ->get();
 
-        return view('activities.index', compact('activities'));
+        $calendarEvents = $activities->map(function ($activity) {
+
+            $startDate = $activity->activity_date->format('Y-m-d');
+
+            $startTime = $activity->start_time
+                ? date('H:i:s', strtotime($activity->start_time))
+                : '00:00:00';
+
+            $start = $startDate . 'T' . $startTime;
+
+            if ($activity->end_time) {
+
+                $endTime = date(
+                    'H:i:s',
+                    strtotime($activity->end_time)
+                );
+
+                $end = $startDate . 'T' . $endTime;
+
+            } else {
+
+                $end = null;
+
+            }
+
+            return [
+                'id' => $activity->id,
+
+                'title' => $activity->title,
+
+                'start' => $start,
+
+                'end' => $end,
+
+                'url' => route('activities.show', $activity),
+
+                'extendedProps' => [
+                    'location' => $activity->location,
+                ],
+            ];
+
+        })->values();
+
+        return view(
+            'activities.index',
+            compact('activities', 'calendarEvents')
+        );
     }
 
-    /**
-     * Menampilkan form tambah kegiatan.
-     */
+
     public function create()
     {
         $users = User::where('is_active', true)
@@ -33,9 +74,7 @@ class ActivityController extends Controller
         return view('activities.create', compact('users'));
     }
 
-    /**
-     * Menyimpan kegiatan baru.
-     */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -74,9 +113,7 @@ class ActivityController extends Controller
             ->with('success', 'Kegiatan berhasil ditambahkan.');
     }
 
-    /**
-     * Menampilkan detail kegiatan.
-     */
+
     public function show(Activity $activity)
     {
         $activity->load(['creator', 'pics']);
@@ -84,9 +121,7 @@ class ActivityController extends Controller
         return view('activities.show', compact('activity'));
     }
 
-    /**
-     * Menampilkan form edit kegiatan.
-     */
+
     public function edit(Activity $activity)
     {
         $activity->load('pics');
@@ -98,9 +133,7 @@ class ActivityController extends Controller
         return view('activities.edit', compact('activity', 'users'));
     }
 
-    /**
-     * Memperbarui kegiatan.
-     */
+
     public function update(Request $request, Activity $activity)
     {
         $validated = $request->validate([
@@ -138,9 +171,7 @@ class ActivityController extends Controller
             ->with('success', 'Kegiatan berhasil diperbarui.');
     }
 
-    /**
-     * Menghapus kegiatan.
-     */
+
     public function destroy(Activity $activity)
     {
         $activity->delete();
