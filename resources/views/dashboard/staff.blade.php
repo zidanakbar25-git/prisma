@@ -1,18 +1,15 @@
-<h1>Dashboard Staff</h1>
+<x-layouts.app
+    title="Dashboard Staff"
+    page-title="Dashboard">
 
-<p>
-    Selamat datang,
-    {{ auth()->user()->name }}
-</p>
+    <div>
+        <h1 class="text-2xl font-bold text-gray-800">
+            Dashboard Staff
+        </h1>
 
-<p>
-    Role: {{ auth()->user()->role }}
-</p>
+        <p class="text-gray-500 mt-1">
+            Selamat datang, {{ auth()->user()->name }}.
+        </p>
+    </div>
 
-<form method="POST" action="{{ route('logout') }}">
-    @csrf
-
-    <button type="submit">
-        Logout
-    </button>
-</form>
+</x-layouts.app>
