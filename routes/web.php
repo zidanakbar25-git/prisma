@@ -79,6 +79,28 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:kabag')
         ->name('activities.store');
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Export PDF
+    |--------------------------------------------------------------------------
+    */
+
+    // Halaman export PDF
+    Route::get('/kalender-kegiatan/export', [ActivityController::class, 'exportForm'])
+        ->name('activities.export.form');
+
+    // Generate PDF
+    Route::get('/kalender-kegiatan/export/pdf', [ActivityController::class, 'exportPdf'])
+        ->name('activities.export.pdf');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Detail / Edit / Delete
+    |--------------------------------------------------------------------------
+    */
+
     // Detail kegiatan
     Route::get('/kalender-kegiatan/{activity}', [ActivityController::class, 'show'])
         ->name('activities.show');

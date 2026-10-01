@@ -13,15 +13,22 @@
             </p>
         </div>
 
+
         <div class="bg-white border border-[#E2E7E2] rounded-lg p-6">
 
-            <form action="{{ route('activities.store') }}" method="POST">
+            <form
+                action="{{ route('activities.store') }}"
+                method="POST"
+            >
+
                 @csrf
 
                 <div class="space-y-5">
 
+
                     {{-- Judul --}}
                     <div>
+
                         <label
                             for="title"
                             class="block mb-2 text-sm font-medium text-[#24332A]"
@@ -34,8 +41,8 @@
                             id="title"
                             name="title"
                             value="{{ old('title') }}"
-                            placeholder="Contoh: Rapat Evaluasi Humas"
                             class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
+                            placeholder="Masukkan judul kegiatan"
                         >
 
                         @error('title')
@@ -43,11 +50,13 @@
                                 {{ $message }}
                             </p>
                         @enderror
+
                     </div>
 
 
                     {{-- Tanggal --}}
                     <div>
+
                         <label
                             for="activity_date"
                             class="block mb-2 text-sm font-medium text-[#24332A]"
@@ -68,67 +77,103 @@
                                 {{ $message }}
                             </p>
                         @enderror
+
                     </div>
 
 
                     {{-- Waktu --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
 
-                        <div>
-                            <label
-                                for="start_time"
-                                class="block mb-2 text-sm font-medium text-[#24332A]"
-                            >
-                                Jam Mulai
-                            </label>
+                        <label class="block mb-2 text-sm font-medium text-[#24332A]">
+                            Waktu Kegiatan
+                        </label>
 
-                            <input
-                                type="time"
-                                id="start_time"
-                                name="start_time"
-                                value="{{ old('start_time') }}"
-                                class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
-                            >
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                            @error('start_time')
-                                <p class="mt-1 text-sm text-red-600">
-                                    {{ $message }}
-                                </p>
-                            @enderror
+                            {{-- Jam Mulai --}}
+                            <div>
+
+                                <label
+                                    for="start_time"
+                                    class="block mb-2 text-xs text-[#6B7280]"
+                                >
+                                    Jam Mulai
+                                </label>
+
+                                <input
+                                    type="time"
+                                    id="start_time"
+                                    name="start_time"
+                                    value="{{ old('start_time') }}"
+                                    class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
+                                >
+
+                                @error('start_time')
+                                    <p class="mt-1 text-sm text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
+
+                            </div>
+
+
+                            {{-- Jam Selesai --}}
+                            <div>
+
+                                <label
+                                    for="end_time"
+                                    class="block mb-2 text-xs text-[#6B7280]"
+                                >
+                                    Jam Selesai
+                                </label>
+
+                                <input
+                                    type="time"
+                                    id="end_time"
+                                    name="end_time"
+                                    value="{{ old('end_time') }}"
+                                    class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
+                                >
+
+                                @error('end_time')
+                                    <p class="mt-1 text-sm text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
+
+                            </div>
+
                         </div>
 
-                        <div>
-                            <label
-                                for="end_time"
-                                class="block mb-2 text-sm font-medium text-[#24332A]"
-                            >
-                                Jam Selesai
-                            </label>
+
+                        {{-- Selesai --}}
+                        <label class="flex items-center gap-3 mt-4 cursor-pointer">
 
                             <input
-                                type="time"
-                                id="end_time"
-                                name="end_time"
-                                value="{{ old('end_time') }}"
-                                class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
+                                type="checkbox"
+                                id="no_end_time"
+                                name="no_end_time"
+                                value="1"
+                                {{ old('no_end_time') ? 'checked' : '' }}
+                                class="w-4 h-4 text-[#234936] border-gray-300 rounded focus:ring-[#315A45]"
                             >
 
-                            <p class="mt-1 text-xs text-[#6B7280]">
-                                Kosongkan jika kegiatan berlangsung sampai selesai.
-                            </p>
+                            <span class="text-sm text-[#24332A]">
+                                Kegiatan berlangsung sampai selesai
+                            </span>
 
-                            @error('end_time')
-                                <p class="mt-1 text-sm text-red-600">
-                                    {{ $message }}
-                                </p>
-                            @enderror
-                        </div>
+                        </label>
+
+                        <p class="mt-1 ml-7 text-xs text-[#6B7280]">
+                            Jika dicentang, jam selesai tidak perlu diisi.
+                        </p>
 
                     </div>
 
 
                     {{-- Lokasi --}}
                     <div>
+
                         <label
                             for="location"
                             class="block mb-2 text-sm font-medium text-[#24332A]"
@@ -141,8 +186,8 @@
                             id="location"
                             name="location"
                             value="{{ old('location') }}"
-                            placeholder="Contoh: Ruang Rapat Humas"
                             class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
+                            placeholder="Contoh: Ruang Rapat Humas"
                         >
 
                         @error('location')
@@ -150,26 +195,31 @@
                                 {{ $message }}
                             </p>
                         @enderror
+
                     </div>
 
 
                     {{-- PIC --}}
                     <div>
-                        <label
-                            class="block mb-2 text-sm font-medium text-[#24332A]"
-                        >
+
+                        <label class="block mb-2 text-sm font-medium text-[#24332A]">
                             PIC Kegiatan
                         </label>
 
                         <div class="border border-[#D5DDD6] rounded-md p-3 space-y-2">
 
                             @foreach($users as $user)
+
                                 <label class="flex items-center gap-3 cursor-pointer">
+
                                     <input
                                         type="checkbox"
                                         name="pic_ids[]"
                                         value="{{ $user->id }}"
-                                        {{ in_array($user->id, old('pic_ids', [])) ? 'checked' : '' }}
+                                        {{ in_array(
+                                            $user->id,
+                                            old('pic_ids', [])
+                                        ) ? 'checked' : '' }}
                                         class="w-4 h-4 text-[#234936] border-gray-300 rounded focus:ring-[#315A45]"
                                     >
 
@@ -180,7 +230,9 @@
                                     <span class="text-xs text-[#6B7280]">
                                         ({{ ucfirst($user->role) }})
                                     </span>
+
                                 </label>
+
                             @endforeach
 
                         </div>
@@ -196,11 +248,13 @@
                                 {{ $message }}
                             </p>
                         @enderror
+
                     </div>
 
 
                     {{-- Deskripsi --}}
                     <div>
+
                         <label
                             for="description"
                             class="block mb-2 text-sm font-medium text-[#24332A]"
@@ -212,8 +266,8 @@
                             id="description"
                             name="description"
                             rows="4"
-                            placeholder="Deskripsi kegiatan..."
                             class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
+                            placeholder="Tambahkan deskripsi kegiatan..."
                         >{{ old('description') }}</textarea>
 
                         @error('description')
@@ -221,10 +275,11 @@
                                 {{ $message }}
                             </p>
                         @enderror
+
                     </div>
 
 
-                    {{-- Tombol --}}
+                    {{-- Buttons --}}
                     <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#E2E7E2]">
 
                         <a
@@ -244,8 +299,64 @@
                     </div>
 
                 </div>
+
             </form>
 
         </div>
+
     </div>
+
+
+    {{-- Script --}}
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const checkbox =
+                document.getElementById('no_end_time');
+
+            const endTime =
+                document.getElementById('end_time');
+
+
+            function updateEndTimeState() {
+
+                if (checkbox.checked) {
+
+                    endTime.value = '';
+
+                    endTime.disabled = true;
+
+                    endTime.classList.add(
+                        'bg-[#F3F5F3]',
+                        'text-[#9CA3AF]',
+                        'cursor-not-allowed'
+                    );
+
+                } else {
+
+                    endTime.disabled = false;
+
+                    endTime.classList.remove(
+                        'bg-[#F3F5F3]',
+                        'text-[#9CA3AF]',
+                        'cursor-not-allowed'
+                    );
+
+                }
+
+            }
+
+
+            checkbox.addEventListener(
+                'change',
+                updateEndTimeState
+            );
+
+
+            updateEndTimeState();
+
+        });
+
+    </script>
 @endsection

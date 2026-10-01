@@ -4,6 +4,7 @@
     <div class="p-8 max-w-4xl">
 
         <div class="mb-6">
+
             <h1 class="text-2xl font-semibold text-[#24332A]">
                 Edit Kegiatan
             </h1>
@@ -11,7 +12,9 @@
             <p class="mt-1 text-sm text-[#6B7280]">
                 Perbarui informasi kegiatan Humas.
             </p>
+
         </div>
+
 
         <div class="bg-white border border-[#E2E7E2] rounded-lg p-6">
 
@@ -19,13 +22,18 @@
                 action="{{ route('activities.update', $activity) }}"
                 method="POST"
             >
+
                 @csrf
+
                 @method('PUT')
+
 
                 <div class="space-y-5">
 
+
                     {{-- Judul --}}
                     <div>
+
                         <label
                             for="title"
                             class="block mb-2 text-sm font-medium text-[#24332A]"
@@ -46,10 +54,13 @@
                                 {{ $message }}
                             </p>
                         @enderror
+
                     </div>
+
 
                     {{-- Tanggal --}}
                     <div>
+
                         <label
                             for="activity_date"
                             class="block mb-2 text-sm font-medium text-[#24332A]"
@@ -61,7 +72,10 @@
                             type="date"
                             id="activity_date"
                             name="activity_date"
-                            value="{{ old('activity_date', $activity->activity_date->format('Y-m-d')) }}"
+                            value="{{ old(
+                                'activity_date',
+                                $activity->activity_date->format('Y-m-d')
+                            ) }}"
                             class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
                         >
 
@@ -70,65 +84,127 @@
                                 {{ $message }}
                             </p>
                         @enderror
+
                     </div>
+
 
                     {{-- Waktu --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
 
-                        <div>
-                            <label
-                                for="start_time"
-                                class="block mb-2 text-sm font-medium text-[#24332A]"
-                            >
-                                Jam Mulai
-                            </label>
+                        <label class="block mb-2 text-sm font-medium text-[#24332A]">
+                            Waktu Kegiatan
+                        </label>
 
-                            <input
-                                type="time"
-                                id="start_time"
-                                name="start_time"
-                                value="{{ old('start_time', $activity->start_time ? \Carbon\Carbon::parse($activity->start_time)->format('H:i') : '') }}"
-                                class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
-                            >
 
-                            @error('start_time')
-                                <p class="mt-1 text-sm text-red-600">
-                                    {{ $message }}
-                                </p>
-                            @enderror
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+
+                            {{-- Jam Mulai --}}
+                            <div>
+
+                                <label
+                                    for="start_time"
+                                    class="block mb-2 text-xs text-[#6B7280]"
+                                >
+                                    Jam Mulai
+                                </label>
+
+                                <input
+                                    type="time"
+                                    id="start_time"
+                                    name="start_time"
+                                    value="{{ old(
+                                        'start_time',
+                                        $activity->start_time
+                                            ? \Carbon\Carbon::parse(
+                                                $activity->start_time
+                                            )->format('H:i')
+                                            : ''
+                                    ) }}"
+                                    class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
+                                >
+
+                                @error('start_time')
+                                    <p class="mt-1 text-sm text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
+
+                            </div>
+
+
+                            {{-- Jam Selesai --}}
+                            <div>
+
+                                <label
+                                    for="end_time"
+                                    class="block mb-2 text-xs text-[#6B7280]"
+                                >
+                                    Jam Selesai
+                                </label>
+
+                                <input
+                                    type="time"
+                                    id="end_time"
+                                    name="end_time"
+                                    value="{{ old(
+                                        'end_time',
+                                        $activity->end_time
+                                            ? \Carbon\Carbon::parse(
+                                                $activity->end_time
+                                            )->format('H:i')
+                                            : ''
+                                    ) }}"
+                                    class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
+                                >
+
+                                @error('end_time')
+                                    <p class="mt-1 text-sm text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
+
+                            </div>
+
                         </div>
 
-                        <div>
-                            <label
-                                for="end_time"
-                                class="block mb-2 text-sm font-medium text-[#24332A]"
-                            >
-                                Jam Selesai
-                            </label>
+
+                        @php
+                            $isNoEndTime = empty($activity->end_time);
+                        @endphp
+
+
+                        {{-- Selesai --}}
+                        <label class="flex items-center gap-3 mt-4 cursor-pointer">
 
                             <input
-                                type="time"
-                                id="end_time"
-                                name="end_time"
-                                value="{{ old('end_time', $activity->end_time ? \Carbon\Carbon::parse($activity->end_time)->format('H:i') : '') }}"
-                                class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
+                                type="checkbox"
+                                id="no_end_time"
+                                name="no_end_time"
+                                value="1"
+                                {{ old(
+                                    'no_end_time',
+                                    $isNoEndTime
+                                ) ? 'checked' : '' }}
+                                class="w-4 h-4 text-[#234936] border-gray-300 rounded focus:ring-[#315A45]"
                             >
 
-                            <p class="mt-1 text-xs text-[#6B7280]">
-                                Kosongkan jika kegiatan berlangsung sampai selesai.
-                            </p>
+                            <span class="text-sm text-[#24332A]">
+                                Kegiatan berlangsung sampai selesai
+                            </span>
 
-                            @error('end_time')
-                                <p class="mt-1 text-sm text-red-600">
-                                    {{ $message }}
-                                </p>
-                            @enderror
-                        </div>
+                        </label>
+
+                        <p class="mt-1 ml-7 text-xs text-[#6B7280]">
+                            Jika dicentang, jam selesai akan disimpan sebagai kosong.
+                        </p>
 
                     </div>
+
 
                     {{-- Lokasi --}}
                     <div>
+
                         <label
                             for="location"
                             class="block mb-2 text-sm font-medium text-[#24332A]"
@@ -140,7 +216,10 @@
                             type="text"
                             id="location"
                             name="location"
-                            value="{{ old('location', $activity->location) }}"
+                            value="{{ old(
+                                'location',
+                                $activity->location
+                            ) }}"
                             class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
                         >
 
@@ -149,13 +228,17 @@
                                 {{ $message }}
                             </p>
                         @enderror
+
                     </div>
+
 
                     {{-- PIC --}}
                     <div>
+
                         <label class="block mb-2 text-sm font-medium text-[#24332A]">
                             PIC Kegiatan
                         </label>
+
 
                         <div class="border border-[#D5DDD6] rounded-md p-3 space-y-2">
 
@@ -172,6 +255,7 @@
                                         $selectedPicIds
                                     );
                                 @endphp
+
 
                                 <label class="flex items-center gap-3 cursor-pointer">
 
@@ -197,6 +281,7 @@
 
                         </div>
 
+
                         @error('pic_ids')
                             <p class="mt-1 text-sm text-red-600">
                                 {{ $message }}
@@ -208,10 +293,13 @@
                                 {{ $message }}
                             </p>
                         @enderror
+
                     </div>
+
 
                     {{-- Deskripsi --}}
                     <div>
+
                         <label
                             for="description"
                             class="block mb-2 text-sm font-medium text-[#24332A]"
@@ -224,16 +312,21 @@
                             name="description"
                             rows="4"
                             class="w-full px-3 py-2.5 text-sm border border-[#D5DDD6] rounded-md focus:outline-none focus:ring-2 focus:ring-[#315A45] focus:border-[#315A45]"
-                        >{{ old('description', $activity->description) }}</textarea>
+                        >{{ old(
+                            'description',
+                            $activity->description
+                        ) }}</textarea>
 
                         @error('description')
                             <p class="mt-1 text-sm text-red-600">
                                 {{ $message }}
                             </p>
                         @enderror
+
                     </div>
 
-                    {{-- Tombol --}}
+
+                    {{-- Buttons --}}
                     <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#E2E7E2]">
 
                         <a
@@ -253,8 +346,64 @@
                     </div>
 
                 </div>
+
             </form>
 
         </div>
+
     </div>
+
+
+    {{-- Script --}}
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const checkbox =
+                document.getElementById('no_end_time');
+
+            const endTime =
+                document.getElementById('end_time');
+
+
+            function updateEndTimeState() {
+
+                if (checkbox.checked) {
+
+                    endTime.value = '';
+
+                    endTime.disabled = true;
+
+                    endTime.classList.add(
+                        'bg-[#F3F5F3]',
+                        'text-[#9CA3AF]',
+                        'cursor-not-allowed'
+                    );
+
+                } else {
+
+                    endTime.disabled = false;
+
+                    endTime.classList.remove(
+                        'bg-[#F3F5F3]',
+                        'text-[#9CA3AF]',
+                        'cursor-not-allowed'
+                    );
+
+                }
+
+            }
+
+
+            checkbox.addEventListener(
+                'change',
+                updateEndTimeState
+            );
+
+
+            updateEndTimeState();
+
+        });
+
+    </script>
 @endsection

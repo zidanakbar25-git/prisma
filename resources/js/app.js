@@ -1,23 +1,67 @@
 document.addEventListener('DOMContentLoaded', function () {
-
     const calendarEl = document.getElementById('activity-calendar');
 
     if (!calendarEl) {
         return;
     }
 
-    const events = JSON.parse(
-        calendarEl.dataset.events || '[]'
-    );
+    const eventsData =
+        document.getElementById('calendar-events-data');
 
-    const calendarGrid = document.getElementById('calendar-grid');
-    const monthTitle = document.getElementById('calendar-month-title');
-    const selectedDateTitle = document.getElementById('selected-date-title');
-    const activityList = document.getElementById('activity-list');
+    const events = eventsData
+        ? JSON.parse(eventsData.textContent || '[]')
+        : [];
 
-    const previousMonthButton = document.getElementById('previous-month');
-    const nextMonthButton = document.getElementById('next-month');
-    const todayButton = document.getElementById('today-button');
+    const calendarGrid =
+        document.getElementById('calendar-grid');
+
+    const monthTitle =
+        document.getElementById('calendar-month-title');
+
+    const selectedDateTitle =
+        document.getElementById('selected-date-title');
+
+    const activityList =
+        document.getElementById('activity-list');
+
+    const previousMonthButton =
+        document.getElementById('previous-month');
+
+    const nextMonthButton =
+        document.getElementById('next-month');
+
+    const createModal =
+        document.getElementById('create-activity-modal');
+
+    const detailModal =
+        document.getElementById('detail-activity-modal');
+
+    const editModal =
+        document.getElementById('edit-activity-modal');
+
+    const openCreateButton =
+        document.getElementById('open-create-activity');
+
+    const openEditFromDetailButton =
+        document.getElementById('open-edit-from-detail');
+
+    const deleteActivityForm =
+        document.getElementById('delete-activity-form');
+
+    const editActivityForm =
+        document.getElementById('edit-activity-form');
+
+    const createEndTime =
+        document.getElementById('create-end-time');
+
+    const createNoEndTime =
+        document.getElementById('create-no-end-time');
+
+    const editEndTime =
+        document.getElementById('edit-end-time');
+
+    const editNoEndTime =
+        document.getElementById('edit-no-end-time');
 
     const monthNames = [
         'Januari',
@@ -49,8 +93,10 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentMonth = today.getMonth();
     let currentYear = today.getFullYear();
 
-    let selectedDate = formatDateKey(today);
+    let selectedDate =
+        formatDateKey(today);
 
+    let selectedActivity = null;
 
     /*
     |--------------------------------------------------------------------------
@@ -59,182 +105,632 @@ document.addEventListener('DOMContentLoaded', function () {
     */
 
     function formatDateKey(date) {
+        const year =
+            date.getFullYear();
 
-        const year = date.getFullYear();
+        const month =
+            String(date.getMonth() + 1)
+                .padStart(2, '0');
 
-        const month = String(
-            date.getMonth() + 1
-        ).padStart(2, '0');
-
-        const day = String(
-            date.getDate()
-        ).padStart(2, '0');
+        const day =
+            String(date.getDate())
+                .padStart(2, '0');
 
         return `${year}-${month}-${day}`;
     }
 
-
     function parseDateKey(dateKey) {
-
-        const parts = dateKey.split('-');
+        const parts =
+            dateKey.split('-');
 
         return new Date(
             Number(parts[0]),
             Number(parts[1]) - 1,
             Number(parts[2])
         );
-
     }
-
 
     function formatSelectedDate(dateKey) {
-
-        const date = parseDateKey(dateKey);
+        const date =
+            parseDateKey(dateKey);
 
         return `${dayNames[date.getDay()]}, ${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-
     }
 
-
     function getEventsForDate(dateKey) {
-
         return events.filter(function (event) {
-
             if (!event.start) {
                 return false;
             }
 
-            return event.start.substring(0, 10) === dateKey;
-
+            return (
+                event.start.substring(0, 10) ===
+                dateKey
+            );
         });
-
     }
 
+    function escapeHtml(value) {
+        const div =
+            document.createElement('div');
+
+        div.textContent =
+            value ?? '';
+
+        return div.innerHTML;
+    }
+
+    function escapeHtmlMultiline(value) {
+        return escapeHtml(value)
+            .replace(/\n/g, '<br>');
+    }
+
+    function capitalize(value) {
+        if (!value) {
+            return '';
+        }
+
+        return (
+            value.charAt(0).toUpperCase() +
+            value.slice(1)
+        );
+    }
 
     /*
     |--------------------------------------------------------------------------
-    | Render Calendar
+    | Modal
+    |--------------------------------------------------------------------------
+    */
+
+    function openModal(modal) {
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.remove('hidden');
+
+        modal.setAttribute(
+            'aria-hidden',
+            'false'
+        );
+
+        document.body.classList.add(
+            'overflow-hidden'
+        );
+    }
+
+    function closeModal(modal) {
+        if (!modal) {
+            return;
+        }
+
+        modal.classList.add('hidden');
+
+        modal.setAttribute(
+            'aria-hidden',
+            'true'
+        );
+
+        const anyModalOpen = [
+            createModal,
+            detailModal,
+            editModal
+        ].some(function (item) {
+            return (
+                item &&
+                !item.classList.contains('hidden')
+            );
+        });
+
+        if (!anyModalOpen) {
+            document.body.classList.remove(
+                'overflow-hidden'
+            );
+        }
+    }
+
+    function closeAllModals() {
+        [
+            createModal,
+            detailModal,
+            editModal
+        ].forEach(function (modal) {
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.add('hidden');
+
+            modal.setAttribute(
+                'aria-hidden',
+                'true'
+            );
+        });
+
+        document.body.classList.remove(
+            'overflow-hidden'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create Activity
+    |--------------------------------------------------------------------------
+    */
+
+    function openCreateModal() {
+        if (!createModal) {
+            return;
+        }
+
+        closeAllModals();
+
+        openModal(createModal);
+
+        const title =
+            document.getElementById(
+                'create-title'
+            );
+
+        if (title) {
+            title.focus();
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Detail Activity
+    |--------------------------------------------------------------------------
+    */
+
+    function openDetailModal(activity) {
+        if (!detailModal || !activity) {
+            return;
+        }
+
+        selectedActivity =
+            activity;
+
+        closeAllModals();
+
+        const title =
+            document.getElementById(
+                'detail-activity-title'
+            );
+
+        const date =
+            document.getElementById(
+                'detail-date'
+            );
+
+        const time =
+            document.getElementById(
+                'detail-time'
+            );
+
+        const location =
+            document.getElementById(
+                'detail-location'
+            );
+
+        const pics =
+            document.getElementById(
+                'detail-pics'
+            );
+
+        const description =
+            document.getElementById(
+                'detail-description'
+            );
+
+        const creator =
+            document.getElementById(
+                'detail-creator'
+            );
+
+        if (title) {
+            title.textContent =
+                activity.title || '-';
+        }
+
+        if (date) {
+            date.textContent =
+                activity.date_label || '-';
+        }
+
+        if (time) {
+            time.textContent =
+                activity.time_label || '-';
+        }
+
+        if (location) {
+            location.textContent =
+                activity.location || '-';
+        }
+
+        if (description) {
+            description.innerHTML =
+                activity.description
+                    ? escapeHtmlMultiline(
+                        activity.description
+                    )
+                    : '-';
+        }
+
+        if (creator) {
+            creator.textContent =
+                activity.creator || '-';
+        }
+
+        if (pics) {
+            pics.innerHTML = '';
+
+            if (
+                !activity.pics ||
+                activity.pics.length === 0
+            ) {
+                const emptyPic =
+                    document.createElement('p');
+
+                emptyPic.className =
+                    'text-sm text-[#24332A]';
+
+                emptyPic.textContent =
+                    '-';
+
+                pics.appendChild(
+                    emptyPic
+                );
+            } else {
+                activity.pics.forEach(
+                    function (pic) {
+                        const item =
+                            document.createElement('p');
+
+                        item.className =
+                            'text-sm text-[#24332A]';
+
+                        item.textContent =
+                            `${pic.name} (${capitalize(pic.role)})`;
+
+                        pics.appendChild(
+                            item
+                        );
+                    }
+                );
+            }
+        }
+
+        if (deleteActivityForm) {
+            deleteActivityForm.action =
+                `/kalender-kegiatan/${activity.id}`;
+        }
+
+        openModal(detailModal);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Edit Activity
+    |--------------------------------------------------------------------------
+    */
+
+    function openEditModal(activity) {
+        if (!editModal || !activity) {
+            return;
+        }
+
+        selectedActivity =
+            activity;
+
+        closeAllModals();
+
+        if (editActivityForm) {
+            editActivityForm.action =
+                `/kalender-kegiatan/${activity.id}`;
+        }
+
+        const title =
+            document.getElementById(
+                'edit-title'
+            );
+
+        const date =
+            document.getElementById(
+                'edit-activity-date'
+            );
+
+        const startTime =
+            document.getElementById(
+                'edit-start-time'
+            );
+
+        const endTime =
+            document.getElementById(
+                'edit-end-time'
+            );
+
+        const location =
+            document.getElementById(
+                'edit-location'
+            );
+
+        const description =
+            document.getElementById(
+                'edit-description'
+            );
+
+        if (title) {
+            title.value =
+                activity.title || '';
+        }
+
+        if (date) {
+            date.value =
+                activity.date || '';
+        }
+
+        if (startTime) {
+            startTime.value =
+                activity.start_time || '';
+        }
+
+        if (endTime) {
+            endTime.value =
+                activity.end_time || '';
+        }
+
+        if (location) {
+            location.value =
+                activity.location || '';
+        }
+
+        if (description) {
+            description.value =
+                activity.description || '';
+        }
+
+        const selectedPicIds =
+            (activity.pics || [])
+                .map(function (pic) {
+                    return String(pic.id);
+                });
+
+        document
+            .querySelectorAll(
+                '[data-edit-pic]'
+            )
+            .forEach(function (checkbox) {
+                checkbox.checked =
+                    selectedPicIds.includes(
+                        String(
+                            checkbox.value
+                        )
+                    );
+            });
+
+        if (editNoEndTime) {
+            editNoEndTime.checked =
+                !activity.end_time;
+        }
+
+        updateEditEndTimeState();
+
+        openModal(editModal);
+
+        if (title) {
+            title.focus();
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | End Time
+    |--------------------------------------------------------------------------
+    */
+
+    function updateCreateEndTimeState() {
+        if (
+            !createEndTime ||
+            !createNoEndTime
+        ) {
+            return;
+        }
+
+        if (createNoEndTime.checked) {
+            createEndTime.value = '';
+
+            createEndTime.disabled =
+                true;
+
+            createEndTime.classList.add(
+                'bg-[#F3F5F3]',
+                'text-[#9AA39D]'
+            );
+        } else {
+            createEndTime.disabled =
+                false;
+
+            createEndTime.classList.remove(
+                'bg-[#F3F5F3]',
+                'text-[#9AA39D]'
+            );
+        }
+    }
+
+    function updateEditEndTimeState() {
+        if (
+            !editEndTime ||
+            !editNoEndTime
+        ) {
+            return;
+        }
+
+        if (editNoEndTime.checked) {
+            editEndTime.value = '';
+
+            editEndTime.disabled =
+                true;
+
+            editEndTime.classList.add(
+                'bg-[#F3F5F3]',
+                'text-[#9AA39D]'
+            );
+        } else {
+            editEndTime.disabled =
+                false;
+
+            editEndTime.classList.remove(
+                'bg-[#F3F5F3]',
+                'text-[#9AA39D]'
+            );
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Calendar
     |--------------------------------------------------------------------------
     */
 
     function renderCalendar() {
-
         monthTitle.textContent =
             `${monthNames[currentMonth]} ${currentYear}`;
 
         calendarGrid.innerHTML = '';
 
-        const firstDay = new Date(
-            currentYear,
-            currentMonth,
-            1
-        );
-
-        const lastDay = new Date(
-            currentYear,
-            currentMonth + 1,
-            0
-        );
-
-        const firstDayIndex = firstDay.getDay();
-
-        const totalDays = lastDay.getDate();
-
-
         /*
         |--------------------------------------------------------------------------
-        | Previous month dates
+        | Tinggi setiap minggu
         |--------------------------------------------------------------------------
         */
 
-        const previousMonthLastDay = new Date(
-            currentYear,
-            currentMonth,
-            0
-        ).getDate();
+        calendarGrid.style.gridAutoRows =
+            '64px';
 
+        calendarGrid.style.alignItems =
+            'start';
 
-        for (let i = firstDayIndex - 1; i >= 0; i--) {
+        calendarGrid.style.alignContent =
+            'start';
 
-            const day = previousMonthLastDay - i;
-
-            const date = new Date(
+        const firstDay =
+            new Date(
                 currentYear,
-                currentMonth - 1,
-                day
+                currentMonth,
+                1
             );
+
+        const lastDay =
+            new Date(
+                currentYear,
+                currentMonth + 1,
+                0
+            );
+
+        const firstDayIndex =
+            firstDay.getDay();
+
+        const totalDays =
+            lastDay.getDate();
+
+        const previousMonthLastDay =
+            new Date(
+                currentYear,
+                currentMonth,
+                0
+            ).getDate();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tanggal bulan sebelumnya
+        |--------------------------------------------------------------------------
+        */
+
+        for (
+            let i = firstDayIndex - 1;
+            i >= 0;
+            i--
+        ) {
+            const day =
+                previousMonthLastDay - i;
+
+            const date =
+                new Date(
+                    currentYear,
+                    currentMonth - 1,
+                    day
+                );
 
             createCalendarDay(
                 date,
                 true
             );
-
         }
-
 
         /*
         |--------------------------------------------------------------------------
-        | Current month dates
+        | Tanggal bulan aktif
         |--------------------------------------------------------------------------
         */
 
-        for (let day = 1; day <= totalDays; day++) {
-
-            const date = new Date(
-                currentYear,
-                currentMonth,
-                day
-            );
+        for (
+            let day = 1;
+            day <= totalDays;
+            day++
+        ) {
+            const date =
+                new Date(
+                    currentYear,
+                    currentMonth,
+                    day
+                );
 
             createCalendarDay(
                 date,
                 false
             );
-
         }
-
 
         /*
         |--------------------------------------------------------------------------
-        | Next month dates
+        | Tanggal bulan berikutnya
         |--------------------------------------------------------------------------
         */
 
-        const totalCells = calendarGrid.children.length;
+        const totalCells =
+            calendarGrid.children.length;
 
         const remainingCells =
             totalCells <= 35
                 ? 35 - totalCells
                 : 42 - totalCells;
 
-
-        for (let day = 1; day <= remainingCells; day++) {
-
-            const date = new Date(
-                currentYear,
-                currentMonth + 1,
-                day
-            );
+        for (
+            let day = 1;
+            day <= remainingCells;
+            day++
+        ) {
+            const date =
+                new Date(
+                    currentYear,
+                    currentMonth + 1,
+                    day
+                );
 
             createCalendarDay(
                 date,
                 true
             );
-
         }
-
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Create Calendar Day
-    |--------------------------------------------------------------------------
-    */
-
-    function createCalendarDay(date, isOtherMonth) {
-
-        const dateKey = formatDateKey(date);
+    function createCalendarDay(
+        date,
+        isOtherMonth
+    ) {
+        const dateKey =
+            formatDateKey(date);
 
         const eventsForDate =
             getEventsForDate(dateKey);
@@ -245,64 +741,108 @@ document.addEventListener('DOMContentLoaded', function () {
         button.type = 'button';
 
         button.className = `
-            relative
             flex
-            items-center
-            justify-center
-            h-12
+            h-16
             w-full
+            items-start
+            justify-center
+            pt-1
             text-sm
-            rounded-md
             transition
         `;
 
-
         /*
         |--------------------------------------------------------------------------
-        | Other month
+        | Warna tanggal bulan lain
+        |--------------------------------------------------------------------------
+        |
+        | Dibuat inline supaya pasti terlihat
+        | redup walaupun Tailwind belum rebuild.
         |--------------------------------------------------------------------------
         */
 
         if (isOtherMonth) {
-
-            button.classList.add(
-                'text-[#B8C0BA]'
-            );
-
+            button.style.color =
+                '#B8C0BA';
         } else {
+            button.style.color =
+                '#24332A';
 
             button.classList.add(
-                'text-[#24332A]',
                 'hover:bg-[#EEF3EF]'
             );
-
         }
-
 
         /*
         |--------------------------------------------------------------------------
-        | Selected date
+        | Wrapper angka + titik
+        |--------------------------------------------------------------------------
+        */
+
+        const content =
+            document.createElement('span');
+
+        content.className = `
+            flex
+            w-8
+            flex-col
+            items-center
+        `;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Angka
+        |--------------------------------------------------------------------------
+        */
+
+        const number =
+            document.createElement('span');
+
+        number.textContent =
+            date.getDate();
+
+        number.className = `
+            flex
+            h-8
+            w-8
+            shrink-0
+            items-center
+            justify-center
+            rounded-lg
+            leading-none
+        `;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pastikan angka bulan lain ikut redup
+        |--------------------------------------------------------------------------
+        */
+
+        if (isOtherMonth) {
+            number.style.color =
+                '#B8C0BA';
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Selected Date
         |--------------------------------------------------------------------------
         */
 
         if (dateKey === selectedDate) {
-
-            button.classList.remove(
-                'hover:bg-[#EEF3EF]'
-            );
-
-            button.classList.add(
+            number.classList.add(
                 'bg-[#234936]',
-                'text-white',
-                'font-medium'
+                'font-medium',
+                'text-white'
             );
 
+            number.style.color =
+                '#FFFFFF';
         }
-
 
         /*
         |--------------------------------------------------------------------------
-        | Today
+        | Hari ini
         |--------------------------------------------------------------------------
         */
 
@@ -310,22 +850,15 @@ document.addEventListener('DOMContentLoaded', function () {
             dateKey === formatDateKey(today) &&
             dateKey !== selectedDate
         ) {
-
-            button.classList.add(
+            number.classList.add(
                 'ring-1',
                 'ring-[#234936]'
             );
-
         }
 
-
-        const number = document.createElement('span');
-
-        number.textContent =
-            date.getDate();
-
-        button.appendChild(number);
-
+        content.appendChild(
+            number
+        );
 
         /*
         |--------------------------------------------------------------------------
@@ -334,110 +867,110 @@ document.addEventListener('DOMContentLoaded', function () {
         */
 
         if (eventsForDate.length > 0) {
-
             const indicator =
                 document.createElement('span');
 
             indicator.className = `
-                absolute
-                bottom-1
-                left-1/2
-                -translate-x-1/2
-                w-1.5
+                mt-1
                 h-1.5
+                w-1.5
+                shrink-0
                 rounded-full
-                ${dateKey === selectedDate
-                    ? 'bg-white'
-                    : 'bg-[#234936]'
-                }
+                bg-[#234936]
             `;
 
-            button.appendChild(indicator);
+            /*
+            |--------------------------------------------------------------------------
+            | Dot bulan lain juga ikut diredupkan
+            |--------------------------------------------------------------------------
+            */
 
+            if (isOtherMonth) {
+                indicator.style.opacity =
+                    '0.35';
+            }
+
+            content.appendChild(
+                indicator
+            );
         }
 
+        button.appendChild(
+            content
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Click
+        |--------------------------------------------------------------------------
+        |
+        | Tanggal bulan sebelumnya/berikutnya
+        | tetap bisa diklik untuk pindah bulan.
+        |--------------------------------------------------------------------------
+        */
 
         button.addEventListener(
             'click',
             function () {
-
-                selectedDate = dateKey;
-
-                /*
-                |--------------------------------------------------------------------------
-                | Jika klik tanggal bulan lain
-                |--------------------------------------------------------------------------
-                */
+                selectedDate =
+                    dateKey;
 
                 if (isOtherMonth) {
-
                     currentMonth =
                         date.getMonth();
 
                     currentYear =
                         date.getFullYear();
-
                 }
 
                 renderCalendar();
 
                 renderActivities();
-
             }
         );
 
-
-        calendarGrid.appendChild(button);
-
+        calendarGrid.appendChild(
+            button
+        );
     }
-
 
     /*
     |--------------------------------------------------------------------------
-    | Render Activities
+    | Activity List
     |--------------------------------------------------------------------------
     */
 
     function renderActivities() {
-
         selectedDateTitle.textContent =
-            formatSelectedDate(selectedDate);
+            formatSelectedDate(
+                selectedDate
+            );
 
         const selectedActivities =
-            getEventsForDate(selectedDate);
+            getEventsForDate(
+                selectedDate
+            );
 
         activityList.innerHTML = '';
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | No Activity
-        |--------------------------------------------------------------------------
-        */
-
-        if (selectedActivities.length === 0) {
-
+        if (
+            selectedActivities.length === 0
+        ) {
             const emptyState =
                 document.createElement('div');
 
             emptyState.className = `
                 flex
-                items-center
-                justify-center
-                min-h-[320px]
-                text-center
+                min-h-[400px]
+                items-start
+                justify-start
+                pt-2
             `;
 
             emptyState.innerHTML = `
-                <div>
-                    <p class="text-sm font-medium text-[#24332A]">
-                        Tidak ada kegiatan
-                    </p>
-
-                    <p class="mt-1 text-sm text-[#6B7280]">
-                        Tidak ada agenda pada tanggal ini.
-                    </p>
-                </div>
+                <p class="text-sm text-[#68746D]">
+                    Tidak ada kegiatan pada tanggal ini.
+                </p>
             `;
 
             activityList.appendChild(
@@ -445,232 +978,520 @@ document.addEventListener('DOMContentLoaded', function () {
             );
 
             return;
-
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Activity Cards
-        |--------------------------------------------------------------------------
-        */
-
-        selectedActivities.forEach(function (event) {
-
-            const card =
-                document.createElement('div');
-
-            card.className = `
-                border
-                border-[#DCE4DE]
-                bg-[#F8FAF8]
-                rounded-lg
-                p-5
-                hover:border-[#B9C9BC]
-                transition
-            `;
-
-
-            const startTime =
-                event.start
-                    ? event.start.substring(11, 16)
-                    : '';
-
-            let endTime = '';
-
-            if (event.end) {
-
-                endTime =
-                    event.end.substring(11, 16);
-
-            }
-
-
-            let timeText = startTime;
-
-            if (endTime) {
-
-                timeText +=
-                    ` - ${endTime}`;
-
-            } else {
-
-                timeText +=
-                    ' - Selesai';
-
-            }
-
-
-            const location =
-                event.extendedProps &&
-                event.extendedProps.location
-                    ? event.extendedProps.location
-                    : '-';
-
-
-            card.innerHTML = `
-
-                <div>
-
-                    <h3 class="text-base font-semibold text-[#24332A]">
-                        ${escapeHtml(event.title)}
-                    </h3>
-
-                </div>
-
-
-                <div class="mt-3 space-y-1">
-
-                    <p class="text-sm text-[#6B7280]">
-                        ${escapeHtml(timeText)}
-                    </p>
-
-                    <p class="text-sm text-[#6B7280]">
-                        ${escapeHtml(location)}
-                    </p>
-
-                </div>
-
-
-                <div class="mt-4 flex justify-end">
-
-                    <a
-                        href="${event.url}"
-                        class="text-sm font-medium text-[#234936] hover:underline"
-                    >
-                        Lihat detail →
-                    </a>
-
-                </div>
-
-            `;
-
-
-            activityList.appendChild(
-                card
-            );
-
-        });
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Escape HTML
-    |--------------------------------------------------------------------------
-    */
-
-    function escapeHtml(value) {
-
-        const div =
+        const list =
             document.createElement('div');
 
-        div.textContent =
-            value ?? '';
+        list.className =
+            'divide-y divide-[#E5E9E6]';
 
-        return div.innerHTML;
+        selectedActivities.forEach(
+            function (event) {
+                const item =
+                    document.createElement('div');
 
+                item.className = `
+                    group
+                    flex
+                    items-center
+                    justify-between
+                    gap-6
+                    py-5
+                    first:pt-1
+                `;
+
+                const location =
+                    event.location ||
+                    'Lokasi belum ditentukan';
+
+                item.innerHTML = `
+                    <div class="min-w-0">
+
+                        <h3 class="truncate text-base font-semibold text-[#24332A]">
+                            ${escapeHtml(event.title)}
+                        </h3>
+
+                        <div class="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1">
+
+                            <p class="text-sm text-[#68746D]">
+                                ${escapeHtml(event.time_label || '-')}
+                            </p>
+
+                            <p class="text-sm text-[#68746D]">
+                                ${escapeHtml(location)}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        class="activity-detail-button shrink-0 text-sm font-medium text-[#234936] transition hover:text-[#315A45] hover:underline"
+                    >
+                        Lihat detail
+                    </button>
+                `;
+
+                const detailButton =
+                    item.querySelector(
+                        '.activity-detail-button'
+                    );
+
+                detailButton.addEventListener(
+                    'click',
+                    function () {
+                        openDetailModal(
+                            event
+                        );
+                    }
+                );
+
+                list.appendChild(
+                    item
+                );
+            }
+        );
+
+        activityList.appendChild(
+            list
+        );
     }
 
-
     /*
     |--------------------------------------------------------------------------
-    | Navigation
+    | Previous Month
     |--------------------------------------------------------------------------
     */
 
-    previousMonthButton.addEventListener(
-        'click',
-        function () {
+    if (previousMonthButton) {
+        previousMonthButton.addEventListener(
+            'click',
+            function () {
+                currentMonth--;
 
-            currentMonth--;
+                if (currentMonth < 0) {
+                    currentMonth = 11;
+                    currentYear--;
+                }
 
-            if (currentMonth < 0) {
+                selectedDate =
+                    formatDateKey(
+                        new Date(
+                            currentYear,
+                            currentMonth,
+                            1
+                        )
+                    );
 
-                currentMonth = 11;
+                renderCalendar();
 
-                currentYear--;
-
+                renderActivities();
             }
-
-            selectedDate =
-                formatDateKey(
-                    new Date(
-                        currentYear,
-                        currentMonth,
-                        1
-                    )
-                );
-
-            renderCalendar();
-
-            renderActivities();
-
-        }
-    );
-
-
-    nextMonthButton.addEventListener(
-        'click',
-        function () {
-
-            currentMonth++;
-
-            if (currentMonth > 11) {
-
-                currentMonth = 0;
-
-                currentYear++;
-
-            }
-
-            selectedDate =
-                formatDateKey(
-                    new Date(
-                        currentYear,
-                        currentMonth,
-                        1
-                    )
-                );
-
-            renderCalendar();
-
-            renderActivities();
-
-        }
-    );
-
-
-    todayButton.addEventListener(
-        'click',
-        function () {
-
-            currentMonth =
-                today.getMonth();
-
-            currentYear =
-                today.getFullYear();
-
-            selectedDate =
-                formatDateKey(today);
-
-            renderCalendar();
-
-            renderActivities();
-
-        }
-    );
-
+        );
+    }
 
     /*
     |--------------------------------------------------------------------------
-    | Initial Render
+    | Next Month
     |--------------------------------------------------------------------------
     */
+
+    if (nextMonthButton) {
+        nextMonthButton.addEventListener(
+            'click',
+            function () {
+                currentMonth++;
+
+                if (currentMonth > 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                }
+
+                selectedDate =
+                    formatDateKey(
+                        new Date(
+                            currentYear,
+                            currentMonth,
+                            1
+                        )
+                    );
+
+                renderCalendar();
+
+                renderActivities();
+            }
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create
+    |--------------------------------------------------------------------------
+    */
+
+    if (openCreateButton) {
+        openCreateButton.addEventListener(
+            'click',
+            function () {
+                openCreateModal();
+            }
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Edit
+    |--------------------------------------------------------------------------
+    */
+
+    if (openEditFromDetailButton) {
+        openEditFromDetailButton.addEventListener(
+            'click',
+            function () {
+                if (!selectedActivity) {
+                    return;
+                }
+
+                openEditModal(
+                    selectedActivity
+                );
+            }
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Close Modal
+    |--------------------------------------------------------------------------
+    */
+
+    document
+        .querySelectorAll(
+            '[data-close-modal]'
+        )
+        .forEach(function (button) {
+            button.addEventListener(
+                'click',
+                function () {
+                    const modalName =
+                        button.dataset.closeModal;
+
+                    if (
+                        modalName === 'create'
+                    ) {
+                        closeModal(
+                            createModal
+                        );
+                    }
+
+                    if (
+                        modalName === 'detail'
+                    ) {
+                        closeModal(
+                            detailModal
+                        );
+                    }
+
+                    if (
+                        modalName === 'edit'
+                    ) {
+                        closeModal(
+                            editModal
+                        );
+                    }
+                }
+            );
+        });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Modal Backdrop
+    |--------------------------------------------------------------------------
+    */
+
+    document
+        .querySelectorAll(
+            '[data-modal-backdrop]'
+        )
+        .forEach(function (backdrop) {
+            backdrop.addEventListener(
+                'click',
+                function (event) {
+                    if (
+                        event.target !==
+                        backdrop
+                    ) {
+                        return;
+                    }
+
+                    const modalName =
+                        backdrop.dataset
+                            .modalBackdrop;
+
+                    if (
+                        modalName === 'create'
+                    ) {
+                        closeModal(
+                            createModal
+                        );
+                    }
+
+                    if (
+                        modalName === 'detail'
+                    ) {
+                        closeModal(
+                            detailModal
+                        );
+                    }
+
+                    if (
+                        modalName === 'edit'
+                    ) {
+                        closeModal(
+                            editModal
+                        );
+                    }
+                }
+            );
+        });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Escape
+    |--------------------------------------------------------------------------
+    */
+
+    document.addEventListener(
+        'keydown',
+        function (event) {
+            if (
+                event.key !==
+                'Escape'
+            ) {
+                return;
+            }
+
+            closeAllModals();
+        }
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create End Time
+    |--------------------------------------------------------------------------
+    */
+
+    if (createNoEndTime) {
+        createNoEndTime.addEventListener(
+            'change',
+            function () {
+                updateCreateEndTimeState();
+            }
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Edit End Time
+    |--------------------------------------------------------------------------
+    */
+
+    if (editNoEndTime) {
+        editNoEndTime.addEventListener(
+            'change',
+            function () {
+                updateEditEndTimeState();
+            }
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validation State
+    |--------------------------------------------------------------------------
+    */
+
+    const modalState =
+        window.activityModalState || {};
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create Validation
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        modalState.hasOldInput &&
+        modalState.openModal ===
+            'create'
+    ) {
+        openCreateModal();
+
+        updateCreateEndTimeState();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Edit Validation
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        modalState.hasOldInput &&
+        modalState.openModal ===
+            'edit' &&
+        modalState.editId
+    ) {
+        const activity =
+            events.find(
+                function (event) {
+                    return (
+                        String(event.id) ===
+                        String(
+                            modalState.editId
+                        )
+                    );
+                }
+            );
+
+        if (activity) {
+            openEditModal(
+                activity
+            );
+
+            const old =
+                modalState.old || {};
+
+            const title =
+                document.getElementById(
+                    'edit-title'
+                );
+
+            const date =
+                document.getElementById(
+                    'edit-activity-date'
+                );
+
+            const startTime =
+                document.getElementById(
+                    'edit-start-time'
+                );
+
+            const endTime =
+                document.getElementById(
+                    'edit-end-time'
+                );
+
+            const location =
+                document.getElementById(
+                    'edit-location'
+                );
+
+            const description =
+                document.getElementById(
+                    'edit-description'
+                );
+
+            if (
+                old.title !== null &&
+                old.title !== undefined &&
+                title
+            ) {
+                title.value =
+                    old.title;
+            }
+
+            if (
+                old.activity_date !== null &&
+                old.activity_date !== undefined &&
+                date
+            ) {
+                date.value =
+                    old.activity_date;
+            }
+
+            if (
+                old.start_time !== null &&
+                old.start_time !== undefined &&
+                startTime
+            ) {
+                startTime.value =
+                    old.start_time;
+            }
+
+            if (
+                old.end_time !== null &&
+                old.end_time !== undefined &&
+                endTime
+            ) {
+                endTime.value =
+                    old.end_time;
+
+                if (editNoEndTime) {
+                    editNoEndTime.checked =
+                        false;
+                }
+            } else {
+                if (editNoEndTime) {
+                    editNoEndTime.checked =
+                        true;
+                }
+            }
+
+            if (
+                old.location !== null &&
+                old.location !== undefined &&
+                location
+            ) {
+                location.value =
+                    old.location;
+            }
+
+            if (
+                old.description !== null &&
+                old.description !== undefined &&
+                description
+            ) {
+                description.value =
+                    old.description;
+            }
+
+            const oldPicIds =
+                (old.pic_ids || [])
+                    .map(function (id) {
+                        return String(id);
+                    });
+
+            document
+                .querySelectorAll(
+                    '[data-edit-pic]'
+                )
+                .forEach(function (checkbox) {
+                    checkbox.checked =
+                        oldPicIds.includes(
+                            String(
+                                checkbox.value
+                            )
+                        );
+                });
+
+            updateEditEndTimeState();
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Initial State
+    |--------------------------------------------------------------------------
+    */
+
+    updateCreateEndTimeState();
+
+    updateEditEndTimeState();
 
     renderCalendar();
 
     renderActivities();
-
 });
