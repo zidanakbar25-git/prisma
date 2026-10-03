@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,8 +19,7 @@
         class="fixed left-0 top-0
                w-[260px] h-screen
                bg-[#234936] text-white
-               flex flex-col"
-    >
+               flex flex-col">
 
         {{-- Logo --}}
         <div class="px-7 py-6 shrink-0">
@@ -49,8 +49,7 @@
                        {{ request()->routeIs('dashboard.*')
                             ? 'bg-[#3b6650] text-white font-medium'
                             : 'text-[#dce8df] hover:bg-[#315a45]' }}
-                       text-sm transition mb-1"
-            >
+                       text-sm transition mb-1">
                 Dashboard
             </a>
 
@@ -62,22 +61,21 @@
                        {{ request()->routeIs('activities.*')
                             ? 'bg-[#3b6650] text-white font-medium'
                             : 'text-[#dce8df] hover:bg-[#315a45]' }}
-                       text-sm transition mb-1"
-            >
+                       text-sm transition mb-1">
                 Kalender Kegiatan
             </a>
 
 
             {{-- To-Do --}}
             @php
-                $unreadTaskCount = 0;
+            $unreadTaskCount = 0;
 
-                if (auth()->user()->role !== 'kabag') {
-                    $unreadTaskCount = auth()->user()
-                        ->assignedTasks()
-                        ->wherePivot('is_read', false)
-                        ->count();
-                }
+            if (auth()->user()->role !== 'kabag') {
+            $unreadTaskCount = auth()->user()
+            ->assignedTasks()
+            ->wherePivot('is_read', false)
+            ->count();
+            }
             @endphp
 
             <a
@@ -87,22 +85,20 @@
                        {{ request()->routeIs('tasks.*')
                             ? 'bg-[#3b6650] text-white font-medium'
                             : 'text-[#dce8df] hover:bg-[#315a45]' }}
-                       text-sm transition"
-            >
+                       text-sm transition">
                 <span>To-Do</span>
 
                 @if($unreadTaskCount > 0)
 
-                    <span
-                        class="text-[11px]
+                <span
+                    class="text-[11px]
                                font-medium
                                bg-white
                                text-[#234936]
                                px-2 py-0.5
-                               rounded-full"
-                    >
-                        {{ $unreadTaskCount }}
-                    </span>
+                               rounded-full">
+                    {{ $unreadTaskCount }}
+                </span>
 
                 @endif
 
@@ -112,54 +108,50 @@
             {{-- Manajemen --}}
             @if(auth()->user()->role === 'kabag')
 
-                <div class="mt-7 mb-2 px-4">
+            <div class="mt-7 mb-2 px-4">
 
-                    <span
-                        class="text-[11px] uppercase
+                <span
+                    class="text-[11px] uppercase
                                tracking-wider
-                               text-[#9fb8a7]"
-                    >
-                        Manajemen
-                    </span>
+                               text-[#9fb8a7]">
+                    Manajemen
+                </span>
 
-                </div>
+            </div>
 
 
-                {{-- Pengguna --}}
-                <a
-                    href="{{ route('users.index') }}"
-                    class="block px-4 py-3 rounded-md
+            {{-- Pengguna --}}
+            <a
+                href="{{ route('users.index') }}"
+                class="block px-4 py-3 rounded-md
                            {{ request()->routeIs('users.*')
                                 ? 'bg-[#3b6650] text-white font-medium'
                                 : 'text-[#dce8df] hover:bg-[#315a45]' }}
-                           text-sm transition mb-1"
-                >
-                    Pengguna
-                </a>
+                           text-sm transition mb-1">
+                Pengguna
+            </a>
 
 
-                {{-- Audit Log --}}
-                <a
-                    href="#"
-                    class="block px-4 py-3 rounded-md
+            {{-- Audit Log --}}
+            <a
+                href="{{ route('audit-logs.index') }}"
+                class="block px-4 py-3 rounded-md
+           {{ request()->routeIs('audit-logs.*')
+                ? 'bg-[#3b6650] text-white font-medium'
+                : 'text-[#dce8df] hover:bg-[#315a45]' }}
+           text-sm transition mb-1">
+                Audit Log
+            </a>
+
+            {{-- Backup Database --}}
+            <a
+                href="#"
+                class="block px-4 py-3 rounded-md
                            text-[#dce8df]
                            hover:bg-[#315a45]
-                           text-sm transition mb-1"
-                >
-                    Audit Log
-                </a>
-
-
-                {{-- Backup Database --}}
-                <a
-                    href="#"
-                    class="block px-4 py-3 rounded-md
-                           text-[#dce8df]
-                           hover:bg-[#315a45]
-                           text-sm transition"
-                >
-                    Backup Database
-                </a>
+                           text-sm transition">
+                Backup Database
+            </a>
 
             @endif
 
@@ -187,8 +179,7 @@
                 <form
                     method="POST"
                     action="{{ route('logout') }}"
-                    class="mt-5"
-                >
+                    class="mt-5">
 
                     @csrf
 
@@ -196,8 +187,7 @@
                         type="submit"
                         class="text-sm text-[#dce8df]
                                hover:text-white
-                               transition"
-                    >
+                               transition">
                         Keluar
                     </button>
 
@@ -219,8 +209,7 @@
                    bg-white
                    border-b border-[#e3e7e3]
                    flex items-center
-                   px-8"
-        >
+                   px-8">
 
             <h1 class="text-lg font-semibold text-[#24332a]">
                 {{ $pageTitle ?? 'Dashboard' }}
@@ -234,34 +223,32 @@
 
             @if(session('success'))
 
-                <div
-                    class="mb-6
+            <div
+                class="mb-6
                            px-4 py-3
                            bg-[#edf5ef]
                            border border-[#d5e5d8]
                            text-[#315c40]
                            rounded-md
-                           text-sm"
-                >
-                    {{ session('success') }}
-                </div>
+                           text-sm">
+                {{ session('success') }}
+            </div>
 
             @endif
 
 
             @if(session('error'))
 
-                <div
-                    class="mb-6
+            <div
+                class="mb-6
                            px-4 py-3
                            bg-[#faf0f0]
                            border border-[#efd6d6]
                            text-[#9b4040]
                            rounded-md
-                           text-sm"
-                >
-                    {{ session('error') }}
-                </div>
+                           text-sm">
+                {{ session('error') }}
+            </div>
 
             @endif
 
@@ -277,4 +264,5 @@
     @livewireScripts
 
 </body>
+
 </html>
