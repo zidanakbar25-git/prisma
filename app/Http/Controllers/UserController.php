@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -97,7 +98,7 @@ class UserController extends Controller
                 'Role yang dipilih tidak valid.',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' =>
                 $validated['name'],
 
@@ -113,6 +114,31 @@ class UserController extends Controller
             'is_active' =>
                 true,
         ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Log
+        |--------------------------------------------------------------------------
+        */
+
+        ActivityLog::create([
+            'user_id' =>
+                auth()->id(),
+
+            'action' =>
+                'Tambah Pengguna',
+
+            'description' =>
+                'Menambahkan pengguna "' .
+                $user->name .
+                '" dengan username "' .
+                $user->username .
+                '" dan role ' .
+                $user->role .
+                '.',
+        ]);
+
 
         return redirect()
             ->route('users.index')
@@ -157,8 +183,10 @@ class UserController extends Controller
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('users', 'username')
-                    ->ignore($user->id),
+                Rule::unique(
+                    'users',
+                    'username'
+                )->ignore($user->id),
             ],
 
             'role' => [
@@ -188,6 +216,12 @@ class UserController extends Controller
                 'Role yang dipilih tidak valid.',
         ]);
 
+
+        $oldName = $user->name;
+        $oldUsername = $user->username;
+        $oldRole = $user->role;
+
+
         $user->update([
             'name' =>
                 $validated['name'],
@@ -198,6 +232,29 @@ class UserController extends Controller
             'role' =>
                 $validated['role'],
         ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Log
+        |--------------------------------------------------------------------------
+        */
+
+        ActivityLog::create([
+            'user_id' =>
+                auth()->id(),
+
+            'action' =>
+                'Edit Pengguna',
+
+            'description' =>
+                'Mengubah data pengguna "' .
+                $oldName .
+                '" menjadi "' .
+                $user->name .
+                '".',
+        ]);
+
 
         return redirect()
             ->route('users.index')
@@ -242,10 +299,32 @@ class UserController extends Controller
                 'Konfirmasi password tidak sama.',
         ]);
 
+
         $user->update([
             'password' =>
                 $validated['password'],
         ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Log
+        |--------------------------------------------------------------------------
+        */
+
+        ActivityLog::create([
+            'user_id' =>
+                auth()->id(),
+
+            'action' =>
+                'Reset Password',
+
+            'description' =>
+                'Mereset password pengguna "' .
+                $user->name .
+                '".',
+        ]);
+
 
         return redirect()
             ->route('users.index')
@@ -263,7 +342,9 @@ class UserController extends Controller
             403
         );
 
+
         if ($user->id === auth()->id()) {
+
             return redirect()
                 ->route('users.index')
                 ->with(
@@ -272,13 +353,48 @@ class UserController extends Controller
                 );
         }
 
+
+        $oldStatus = $user->is_active;
+
         $user->update([
-            'is_active' => !$user->is_active,
+            'is_active' =>
+                !$user->is_active,
         ]);
+
+
+        $status = $user->is_active
+            ? 'mengaktifkan'
+            : 'menonaktifkan';
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Log
+        |--------------------------------------------------------------------------
+        */
+
+        ActivityLog::create([
+            'user_id' =>
+                auth()->id(),
+
+            'action' =>
+                $user->is_active
+                    ? 'Aktifkan Pengguna'
+                    : 'Nonaktifkan Pengguna',
+
+            'description' =>
+                'Berhasil ' .
+                $status .
+                ' akun pengguna "' .
+                $user->name .
+                '".',
+        ]);
+
 
         $message = $user->is_active
             ? 'Pengguna berhasil diaktifkan.'
             : 'Pengguna berhasil dinonaktifkan.';
+
 
         return redirect()
             ->route('users.index')

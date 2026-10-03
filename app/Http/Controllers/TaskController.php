@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ class TaskController extends Controller
         $user = auth()->user();
 
         if ($user->role === 'kabag') {
+
             $tasks = Task::with([
                 'creator',
                 'assignees',
@@ -20,31 +22,45 @@ class TaskController extends Controller
                 ->orderBy('due_date', 'asc')
                 ->orderBy('created_at', 'desc')
                 ->get();
+
         } else {
+
             $tasks = Task::with([
                 'creator',
                 'assignees',
             ])
                 ->whereHas('assignees', function ($query) use ($user) {
-                    $query->where('users.id', $user->id);
+                    $query->where(
+                        'users.id',
+                        $user->id
+                    );
                 })
                 ->orderBy('due_date', 'asc')
                 ->orderBy('created_at', 'desc')
                 ->get();
 
+
             foreach ($tasks as $task) {
+
                 $assignment = $task->assignees
-                    ->firstWhere('id', $user->id);
+                    ->firstWhere(
+                        'id',
+                        $user->id
+                    );
 
                 if ($assignment) {
+
                     $assignment->pivot->was_unread =
                         !$assignment->pivot->is_read;
                 }
             }
 
+
             $taskIds = $tasks->pluck('id');
 
+
             if ($taskIds->isNotEmpty()) {
+
                 $user->assignedTasks()->updateExistingPivot(
                     $taskIds->all(),
                     [
@@ -54,7 +70,11 @@ class TaskController extends Controller
             }
         }
 
-        return view('tasks.index', compact('tasks'));
+
+        return view(
+            'tasks.index',
+            compact('tasks')
+        );
     }
 
 
@@ -65,12 +85,26 @@ class TaskController extends Controller
             403
         );
 
-        $users = User::whereIn('role', ['staff', 'intern'])
-            ->where('is_active', true)
+
+        $users = User::whereIn(
+            'role',
+            [
+                'staff',
+                'intern',
+            ]
+        )
+            ->where(
+                'is_active',
+                true
+            )
             ->orderBy('name')
             ->get();
 
-        return view('tasks.create', compact('users'));
+
+        return view(
+            'tasks.create',
+            compact('users')
+        );
     }
 
 
@@ -81,23 +115,35 @@ class TaskController extends Controller
             403
         );
 
-        $validated = $this->validateTask($request);
 
-        $validAssigneeIds = $this->getValidAssigneeIds(
-            $validated['assignee_ids']
+        $validated = $this->validateTask(
+            $request
         );
+
+
+        $validAssigneeIds =
+            $this->getValidAssigneeIds(
+                $validated['assignee_ids']
+            );
+
 
         if (
             count($validAssigneeIds) !==
-            count(array_unique($validated['assignee_ids']))
+            count(
+                array_unique(
+                    $validated['assignee_ids']
+                )
+            )
         ) {
+
             return back()
                 ->withErrors([
                     'assignee_ids' =>
-                        'Penerima hanya dapat berupa Staff atau Intern yang aktif.'
+                        'Penerima hanya dapat berupa Staff atau Intern yang aktif.',
                 ])
                 ->withInput();
         }
+
 
         $task = Task::create([
             'title' =>
@@ -116,16 +162,56 @@ class TaskController extends Controller
                 auth()->id(),
         ]);
 
+
         $assignments = [];
 
+
         foreach ($validAssigneeIds as $userId) {
+
             $assignments[$userId] = [
-                'status' => 'belum_mulai',
-                'is_read' => false,
+                'status' =>
+                    'belum_mulai',
+
+                'is_read' =>
+                    false,
             ];
         }
 
-        $task->assignees()->sync($assignments);
+
+        $task->assignees()->sync(
+            $assignments
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Log
+        |--------------------------------------------------------------------------
+        */
+
+        $assigneeNames = User::whereIn(
+            'id',
+            $validAssigneeIds
+        )
+            ->pluck('name')
+            ->implode(', ');
+
+
+        ActivityLog::create([
+            'user_id' =>
+                auth()->id(),
+
+            'action' =>
+                'Tambah To-Do',
+
+            'description' =>
+                'Menambahkan To-Do "' .
+                $task->title .
+                '" dan mengassign kepada ' .
+                $assigneeNames .
+                '.',
+        ]);
+
 
         return redirect()
             ->route('tasks.index')
@@ -143,16 +229,33 @@ class TaskController extends Controller
             403
         );
 
-        $task->load('assignees');
 
-        $users = User::whereIn('role', ['staff', 'intern'])
-            ->where('is_active', true)
+        $task->load(
+            'assignees'
+        );
+
+
+        $users = User::whereIn(
+            'role',
+            [
+                'staff',
+                'intern',
+            ]
+        )
+            ->where(
+                'is_active',
+                true
+            )
             ->orderBy('name')
             ->get();
 
+
         return view(
             'tasks.edit',
-            compact('task', 'users')
+            compact(
+                'task',
+                'users'
+            )
         );
     }
 
@@ -166,23 +269,38 @@ class TaskController extends Controller
             403
         );
 
-        $validated = $this->validateTask($request);
 
-        $validAssigneeIds = $this->getValidAssigneeIds(
-            $validated['assignee_ids']
+        $validated = $this->validateTask(
+            $request
         );
+
+
+        $validAssigneeIds =
+            $this->getValidAssigneeIds(
+                $validated['assignee_ids']
+            );
+
 
         if (
             count($validAssigneeIds) !==
-            count(array_unique($validated['assignee_ids']))
+            count(
+                array_unique(
+                    $validated['assignee_ids']
+                )
+            )
         ) {
+
             return back()
                 ->withErrors([
                     'assignee_ids' =>
-                        'Penerima hanya dapat berupa Staff atau Intern yang aktif.'
+                        'Penerima hanya dapat berupa Staff atau Intern yang aktif.',
                 ])
                 ->withInput();
         }
+
+
+        $oldTitle = $task->title;
+
 
         $task->update([
             'title' =>
@@ -198,23 +316,30 @@ class TaskController extends Controller
                 $validated['due_date'],
         ]);
 
+
         /*
          * Ambil assignment lama.
          * Status dan is_read milik penerima lama
          * akan dipertahankan.
          */
+
         $existingAssignments = $task->assignees()
             ->get()
             ->keyBy('id');
 
+
         $assignments = [];
+
 
         foreach ($validAssigneeIds as $userId) {
 
             if ($existingAssignments->has($userId)) {
 
                 $oldAssignment =
-                    $existingAssignments->get($userId);
+                    $existingAssignments->get(
+                        $userId
+                    );
+
 
                 $assignments[$userId] = [
                     'status' =>
@@ -227,13 +352,42 @@ class TaskController extends Controller
             } else {
 
                 $assignments[$userId] = [
-                    'status' => 'belum_mulai',
-                    'is_read' => false,
+                    'status' =>
+                        'belum_mulai',
+
+                    'is_read' =>
+                        false,
                 ];
             }
         }
 
-        $task->assignees()->sync($assignments);
+
+        $task->assignees()->sync(
+            $assignments
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Log
+        |--------------------------------------------------------------------------
+        */
+
+        ActivityLog::create([
+            'user_id' =>
+                auth()->id(),
+
+            'action' =>
+                'Edit To-Do',
+
+            'description' =>
+                'Mengubah To-Do "' .
+                $oldTitle .
+                '" menjadi "' .
+                $task->title .
+                '".',
+        ]);
+
 
         return redirect()
             ->route('tasks.index')
@@ -251,7 +405,32 @@ class TaskController extends Controller
             403
         );
 
+
+        $taskTitle = $task->title;
+
+
         $task->delete();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Log
+        |--------------------------------------------------------------------------
+        */
+
+        ActivityLog::create([
+            'user_id' =>
+                auth()->id(),
+
+            'action' =>
+                'Hapus To-Do',
+
+            'description' =>
+                'Menghapus To-Do "' .
+                $taskTitle .
+                '".',
+        ]);
+
 
         return redirect()
             ->route('tasks.index')
@@ -279,22 +458,65 @@ class TaskController extends Controller
                 'Status yang dipilih tidak valid.',
         ]);
 
+
         $user = auth()->user();
 
+
         $assignment = $task->assignees()
-            ->where('users.id', $user->id)
+            ->where(
+                'users.id',
+                $user->id
+            )
             ->first();
 
+
         if (!$assignment) {
-            abort(403, 'Anda tidak memiliki tugas ini.');
+
+            abort(
+                403,
+                'Anda tidak memiliki tugas ini.'
+            );
         }
+
+
+        $oldStatus =
+            $assignment->pivot->status;
+
 
         $task->assignees()->updateExistingPivot(
             $user->id,
             [
-                'status' => $validated['status'],
+                'status' =>
+                    $validated['status'],
             ]
         );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Audit Log
+        |--------------------------------------------------------------------------
+        */
+
+        ActivityLog::create([
+            'user_id' =>
+                auth()->id(),
+
+            'action' =>
+                'Ubah Status To-Do',
+
+            'description' =>
+                'Mengubah status To-Do "' .
+                $task->title .
+                '" dari "' .
+                $this->statusLabel($oldStatus) .
+                '" menjadi "' .
+                $this->statusLabel(
+                    $validated['status']
+                ) .
+                '".',
+        ]);
+
 
         return redirect()
             ->route('tasks.index')
@@ -305,8 +527,9 @@ class TaskController extends Controller
     }
 
 
-    private function validateTask(Request $request)
-    {
+    private function validateTask(
+        Request $request
+    ) {
         return $request->validate([
             'title' => [
                 'required',
@@ -370,15 +593,45 @@ class TaskController extends Controller
     }
 
 
-    private function getValidAssigneeIds(array $assigneeIds)
-    {
+    private function getValidAssigneeIds(
+        array $assigneeIds
+    ) {
         return User::whereIn(
             'id',
             $assigneeIds
         )
-            ->whereIn('role', ['staff', 'intern'])
-            ->where('is_active', true)
+            ->whereIn(
+                'role',
+                [
+                    'staff',
+                    'intern',
+                ]
+            )
+            ->where(
+                'is_active',
+                true
+            )
             ->pluck('id')
             ->toArray();
+    }
+
+
+    private function statusLabel(
+        string $status
+    ): string {
+        return match ($status) {
+
+            'belum_mulai' =>
+                'Belum Mulai',
+
+            'sedang_dikerjakan' =>
+                'Sedang Dikerjakan',
+
+            'selesai' =>
+                'Selesai',
+
+            default =>
+                $status,
+        };
     }
 }
