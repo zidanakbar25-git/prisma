@@ -53,9 +53,24 @@ Route::get('/dashboard/intern', function () {
 */
 
 Route::middleware('auth')->group(function () {
+
+
+    // user
+
+
+    
+
     Route::get('/pengguna', [UserController::class, 'index'])
     ->middleware('role:kabag')
     ->name('users.index');
+
+Route::get('/pengguna/tambah', [UserController::class, 'create'])
+    ->middleware('role:kabag')
+    ->name('users.create');
+
+Route::post('/pengguna', [UserController::class, 'store'])
+    ->middleware('role:kabag')
+    ->name('users.store');
 
     /*
     |--------------------------------------------------------------------------

@@ -20,7 +20,7 @@
 
 
             <a
-                href="#"
+                href="{{ route('users.create') }}"
                 class="shrink-0
                        rounded-md
                        bg-[#234936]
@@ -228,38 +228,30 @@
                                                gap-2"
                                     >
 
-                                        <a
-                                            href="#"
+                                        <span
                                             class="rounded-md
                                                    border
-                                                   border-[#d9dfda]
-                                                   bg-white
+                                                   border-[#e2e7e2]
+                                                   bg-[#f7f8f6]
                                                    px-3 py-2
                                                    text-xs
-                                                   font-medium
-                                                   text-[#37443b]
-                                                   transition
-                                                   hover:bg-[#f7f8f6]"
+                                                   text-[#9ca3af]"
                                         >
                                             Edit
-                                        </a>
+                                        </span>
 
 
-                                        <a
-                                            href="#"
+                                        <span
                                             class="rounded-md
                                                    border
-                                                   border-[#d9dfda]
-                                                   bg-white
+                                                   border-[#e2e7e2]
+                                                   bg-[#f7f8f6]
                                                    px-3 py-2
                                                    text-xs
-                                                   font-medium
-                                                   text-[#37443b]
-                                                   transition
-                                                   hover:bg-[#f7f8f6]"
+                                                   text-[#9ca3af]"
                                         >
                                             Reset Password
-                                        </a>
+                                        </span>
 
                                     </div>
 
