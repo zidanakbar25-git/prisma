@@ -8,6 +8,7 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\BackupController;
 
 
 /*
@@ -34,7 +35,6 @@ Route::middleware('guest')->group(function () {
 
     Route::post('/login', [AuthController::class, 'login'])
         ->name('login.submit');
-
 });
 
 
@@ -226,6 +226,21 @@ Route::middleware('auth')->group(function () {
 
 
     /*
+|--------------------------------------------------------------------------
+| Backup Database
+|--------------------------------------------------------------------------
+*/
+
+    Route::get('/backup-database', [BackupController::class, 'index'])
+        ->middleware('role:kabag')
+        ->name('backup.index');
+
+    Route::get('/backup-database/download', [BackupController::class, 'download'])
+        ->middleware('role:kabag')
+        ->name('backup.download');
+
+
+    /*
     |--------------------------------------------------------------------------
     | Logout
     |--------------------------------------------------------------------------
@@ -233,5 +248,4 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout'])
         ->name('logout');
-
 });

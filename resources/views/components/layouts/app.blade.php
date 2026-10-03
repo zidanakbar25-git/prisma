@@ -145,11 +145,12 @@
 
             {{-- Backup Database --}}
             <a
-                href="#"
+                href="{{ route('backup.index') }}"
                 class="block px-4 py-3 rounded-md
-                           text-[#dce8df]
-                           hover:bg-[#315a45]
-                           text-sm transition">
+           {{ request()->routeIs('backup.*')
+                ? 'bg-[#3b6650] text-white font-medium'
+                : 'text-[#dce8df] hover:bg-[#315a45]' }}
+           text-sm transition">
                 Backup Database
             </a>
 
