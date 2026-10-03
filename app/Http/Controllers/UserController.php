@@ -254,4 +254,37 @@ class UserController extends Controller
                 'Password pengguna berhasil direset.'
             );
     }
+
+
+    public function toggleStatus(User $user)
+    {
+        abort_unless(
+            auth()->user()->role === 'kabag',
+            403
+        );
+
+        if ($user->id === auth()->id()) {
+            return redirect()
+                ->route('users.index')
+                ->with(
+                    'error',
+                    'Anda tidak dapat menonaktifkan akun sendiri.'
+                );
+        }
+
+        $user->update([
+            'is_active' => !$user->is_active,
+        ]);
+
+        $message = $user->is_active
+            ? 'Pengguna berhasil diaktifkan.'
+            : 'Pengguna berhasil dinonaktifkan.';
+
+        return redirect()
+            ->route('users.index')
+            ->with(
+                'success',
+                $message
+            );
+    }
 }

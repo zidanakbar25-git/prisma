@@ -59,8 +59,7 @@ Route::middleware('auth')->group(function () {
 
 
     
-
-    Route::get('/pengguna', [UserController::class, 'index'])
+Route::get('/pengguna', [UserController::class, 'index'])
     ->middleware('role:kabag')
     ->name('users.index');
 
@@ -91,11 +90,16 @@ Route::get('/pengguna/{user}/reset-password', function (\App\Models\User $user) 
         compact('user')
     );
 })
+    ->middleware('role:kabag')
     ->name('users.reset-password');
 
 Route::put('/pengguna/{user}/reset-password', [UserController::class, 'resetPassword'])
     ->middleware('role:kabag')
     ->name('users.reset-password.store');
+
+Route::put('/pengguna/{user}/toggle-status', [UserController::class, 'toggleStatus'])
+    ->middleware('role:kabag')
+    ->name('users.toggle-status');
 
     /*
     |--------------------------------------------------------------------------

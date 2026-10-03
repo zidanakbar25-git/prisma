@@ -223,6 +223,7 @@
 
                                     <div
                                         class="flex
+                                               flex-wrap
                                                items-center
                                                justify-end
                                                gap-2"
@@ -260,6 +261,77 @@
                                         >
                                             Reset Password
                                         </a>
+
+
+                                        {{-- Aktif / Nonaktif --}}
+                                        @if($user->id !== auth()->id())
+
+                                            <form
+                                                method="POST"
+                                                action="{{ route('users.toggle-status', $user) }}"
+                                                onsubmit="return confirm(
+                                                    '{{ $user->is_active
+                                                        ? 'Apakah Anda yakin ingin menonaktifkan pengguna ini?'
+                                                        : 'Apakah Anda yakin ingin mengaktifkan pengguna ini?' }}'
+                                                );"
+                                            >
+
+                                                @csrf
+
+                                                @method('PUT')
+
+                                                @if($user->is_active)
+
+                                                    <button
+                                                        type="submit"
+                                                        class="rounded-md
+                                                               border border-[#efd6d6]
+                                                               bg-white
+                                                               px-3 py-2
+                                                               text-xs
+                                                               font-medium
+                                                               text-[#9b4040]
+                                                               transition
+                                                               hover:bg-[#faf0f0]"
+                                                    >
+                                                        Nonaktifkan
+                                                    </button>
+
+                                                @else
+
+                                                    <button
+                                                        type="submit"
+                                                        class="rounded-md
+                                                               border border-[#d5e5d8]
+                                                               bg-white
+                                                               px-3 py-2
+                                                               text-xs
+                                                               font-medium
+                                                               text-[#315c40]
+                                                               transition
+                                                               hover:bg-[#edf5ef]"
+                                                    >
+                                                        Aktifkan
+                                                    </button>
+
+                                                @endif
+
+                                            </form>
+
+                                        @else
+
+                                            <span
+                                                class="rounded-md
+                                                       border border-[#e2e7e2]
+                                                       bg-[#f7f8f6]
+                                                       px-3 py-2
+                                                       text-xs
+                                                       text-[#9ca3af]"
+                                            >
+                                                Akun Anda
+                                            </span>
+
+                                        @endif
 
                                     </div>
 
