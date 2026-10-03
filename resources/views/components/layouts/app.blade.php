@@ -38,25 +38,37 @@
         {{-- Navigation --}}
         <nav class="flex-1 px-4 py-3 overflow-y-auto">
 
+            {{-- Dashboard --}}
             <a
-                href="#"
+                href="{{ auth()->user()->role === 'kabag'
+                    ? route('dashboard.kabag')
+                    : (auth()->user()->role === 'staff'
+                        ? route('dashboard.staff')
+                        : route('dashboard.intern')) }}"
                 class="block px-4 py-3 rounded-md
-                       bg-[#3b6650] text-white
-                       text-sm font-medium mb-1"
+                       {{ request()->routeIs('dashboard.*')
+                            ? 'bg-[#3b6650] text-white font-medium'
+                            : 'text-[#dce8df] hover:bg-[#315a45]' }}
+                       text-sm transition mb-1"
             >
                 Dashboard
             </a>
 
+
+            {{-- Kalender Kegiatan --}}
             <a
-                href="#"
+                href="{{ route('activities.index') }}"
                 class="block px-4 py-3 rounded-md
-                       text-[#dce8df]
-                       hover:bg-[#315a45]
-                       text-sm transition"
+                       {{ request()->routeIs('activities.*')
+                            ? 'bg-[#3b6650] text-white font-medium'
+                            : 'text-[#dce8df] hover:bg-[#315a45]' }}
+                       text-sm transition mb-1"
             >
                 Kalender Kegiatan
             </a>
 
+
+            {{-- To-Do --}}
             <a
                 href="#"
                 class="flex items-center justify-between
@@ -67,26 +79,33 @@
             >
                 <span>To-Do</span>
 
-                <span class="text-xs
-                             bg-[#dce8df]
-                             text-[#234936]
-                             px-2 py-0.5
-                             rounded-full">
+                <span
+                    class="text-xs
+                           bg-[#dce8df]
+                           text-[#234936]
+                           px-2 py-0.5
+                           rounded-full"
+                >
                     3
                 </span>
             </a>
 
 
+            {{-- Manajemen --}}
             @if(auth()->user()->role === 'kabag')
 
                 <div class="mt-7 mb-2 px-4">
-                    <span class="text-[11px] uppercase
-                                 tracking-wider
-                                 text-[#9fb8a7]">
+                    <span
+                        class="text-[11px] uppercase
+                               tracking-wider
+                               text-[#9fb8a7]"
+                    >
                         Manajemen
                     </span>
                 </div>
 
+
+                {{-- Pengguna --}}
                 <a
                     href="#"
                     class="block px-4 py-3 rounded-md
@@ -97,6 +116,8 @@
                     Pengguna
                 </a>
 
+
+                {{-- Audit Log --}}
                 <a
                     href="#"
                     class="block px-4 py-3 rounded-md
@@ -107,6 +128,8 @@
                     Audit Log
                 </a>
 
+
+                {{-- Backup Database --}}
                 <a
                     href="#"
                     class="block px-4 py-3 rounded-md
