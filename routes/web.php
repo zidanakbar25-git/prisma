@@ -2,13 +2,8 @@
 
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
-
-/*
-|--------------------------------------------------------------------------
-| Public Routes
-|--------------------------------------------------------------------------
-*/
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -20,13 +15,6 @@ Route::get('/login', [AuthController::class, 'showLogin'])
 Route::post('/login', [AuthController::class, 'login'])
     ->name('login.process');
 
-
-/*
-|--------------------------------------------------------------------------
-| Authentication Routes
-|--------------------------------------------------------------------------
-*/
-
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
@@ -34,7 +22,7 @@ Route::post('/logout', [AuthController::class, 'logout'])
 
 /*
 |--------------------------------------------------------------------------
-| Dashboard Routes
+| Dashboard
 |--------------------------------------------------------------------------
 */
 
@@ -59,64 +47,104 @@ Route::get('/dashboard/intern', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Kalender Kegiatan
+| Authenticated Routes
 |--------------------------------------------------------------------------
 */
 
 Route::middleware('auth')->group(function () {
 
-    // Daftar kegiatan
-    Route::get('/kalender-kegiatan', [ActivityController::class, 'index'])
+    /*
+    |--------------------------------------------------------------------------
+    | Kalender Kegiatan
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/kalender-kegiatan',
+        [ActivityController::class, 'index']
+    )
         ->name('activities.index');
 
-    // Form tambah kegiatan - Kabag
-    Route::get('/kalender-kegiatan/tambah', [ActivityController::class, 'create'])
+    Route::get(
+        '/kalender-kegiatan/tambah',
+        [ActivityController::class, 'create']
+    )
         ->middleware('role:kabag')
         ->name('activities.create');
 
-    // Simpan kegiatan - Kabag
-    Route::post('/kalender-kegiatan', [ActivityController::class, 'store'])
+    Route::post(
+        '/kalender-kegiatan',
+        [ActivityController::class, 'store']
+    )
         ->middleware('role:kabag')
         ->name('activities.store');
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Export PDF
-    |--------------------------------------------------------------------------
-    */
-
-    // Halaman export PDF
-    Route::get('/kalender-kegiatan/export', [ActivityController::class, 'exportForm'])
+    Route::get(
+        '/kalender-kegiatan/export',
+        [ActivityController::class, 'exportForm']
+    )
         ->name('activities.export.form');
 
-    // Generate PDF
-    Route::get('/kalender-kegiatan/export/pdf', [ActivityController::class, 'exportPdf'])
+    Route::get(
+        '/kalender-kegiatan/export/pdf',
+        [ActivityController::class, 'exportPdf']
+    )
         ->name('activities.export.pdf');
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Detail / Edit / Delete
-    |--------------------------------------------------------------------------
-    */
-
-    // Detail kegiatan
-    Route::get('/kalender-kegiatan/{activity}', [ActivityController::class, 'show'])
+    Route::get(
+        '/kalender-kegiatan/{activity}',
+        [ActivityController::class, 'show']
+    )
         ->name('activities.show');
 
-    // Form edit kegiatan - Kabag
-    Route::get('/kalender-kegiatan/{activity}/edit', [ActivityController::class, 'edit'])
+    Route::get(
+        '/kalender-kegiatan/{activity}/edit',
+        [ActivityController::class, 'edit']
+    )
         ->middleware('role:kabag')
         ->name('activities.edit');
 
-    // Update kegiatan - Kabag
-    Route::put('/kalender-kegiatan/{activity}', [ActivityController::class, 'update'])
+    Route::put(
+        '/kalender-kegiatan/{activity}',
+        [ActivityController::class, 'update']
+    )
         ->middleware('role:kabag')
         ->name('activities.update');
 
-    // Hapus kegiatan - Kabag
-    Route::delete('/kalender-kegiatan/{activity}', [ActivityController::class, 'destroy'])
+    Route::delete(
+        '/kalender-kegiatan/{activity}',
+        [ActivityController::class, 'destroy']
+    )
         ->middleware('role:kabag')
         ->name('activities.destroy');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | To-Do
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/to-do',
+        [TaskController::class, 'index']
+    )
+        ->name('tasks.index');
+
+    Route::get(
+        '/to-do/tambah',
+        [TaskController::class, 'create']
+    )
+        ->middleware('role:kabag')
+        ->name('tasks.create');
+
+    Route::post(
+        '/to-do',
+        [TaskController::class, 'store']
+    )
+        ->middleware('role:kabag')
+        ->name('tasks.store');
+
+        Route::put('/to-do/{task}/status', [TaskController::class, 'updateStatus'])
+    ->name('tasks.update-status');
 });

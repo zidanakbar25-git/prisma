@@ -69,25 +69,42 @@
 
 
             {{-- To-Do --}}
+            @php
+                $unreadTaskCount = 0;
+
+                if (auth()->user()->role !== 'kabag') {
+                    $unreadTaskCount = auth()->user()
+                        ->assignedTasks()
+                        ->wherePivot('is_read', false)
+                        ->count();
+                }
+            @endphp
+
             <a
-                href="#"
+                href="{{ route('tasks.index') }}"
                 class="flex items-center justify-between
                        px-4 py-3 rounded-md
-                       text-[#dce8df]
-                       hover:bg-[#315a45]
+                       {{ request()->routeIs('tasks.*')
+                            ? 'bg-[#3b6650] text-white font-medium'
+                            : 'text-[#dce8df] hover:bg-[#315a45]' }}
                        text-sm transition"
             >
                 <span>To-Do</span>
 
-                <span
-                    class="text-xs
-                           bg-[#dce8df]
-                           text-[#234936]
-                           px-2 py-0.5
-                           rounded-full"
-                >
-                    3
-                </span>
+                @if($unreadTaskCount > 0)
+
+                    <span
+                        class="text-[11px]
+                               font-medium
+                               bg-white
+                               text-[#234936]
+                               px-2 py-0.5
+                               rounded-full"
+                    >
+                        {{ $unreadTaskCount }}
+                    </span>
+
+                @endif
             </a>
 
 
@@ -95,6 +112,7 @@
             @if(auth()->user()->role === 'kabag')
 
                 <div class="mt-7 mb-2 px-4">
+
                     <span
                         class="text-[11px] uppercase
                                tracking-wider
@@ -102,6 +120,7 @@
                     >
                         Manajemen
                     </span>
+
                 </div>
 
 
@@ -210,6 +229,7 @@
         <main class="p-8">
 
             @if(session('success'))
+
                 <div
                     class="mb-6
                            px-4 py-3
@@ -221,10 +241,12 @@
                 >
                     {{ session('success') }}
                 </div>
+
             @endif
 
 
             @if(session('error'))
+
                 <div
                     class="mb-6
                            px-4 py-3
@@ -236,6 +258,7 @@
                 >
                     {{ session('error') }}
                 </div>
+
             @endif
 
 
