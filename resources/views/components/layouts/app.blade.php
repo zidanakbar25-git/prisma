@@ -105,6 +105,7 @@
                     </span>
 
                 @endif
+
             </a>
 
 
@@ -126,11 +127,12 @@
 
                 {{-- Pengguna --}}
                 <a
-                    href="#"
+                    href="{{ route('users.index') }}"
                     class="block px-4 py-3 rounded-md
-                           text-[#dce8df]
-                           hover:bg-[#315a45]
-                           text-sm transition"
+                           {{ request()->routeIs('users.*')
+                                ? 'bg-[#3b6650] text-white font-medium'
+                                : 'text-[#dce8df] hover:bg-[#315a45]' }}
+                           text-sm transition mb-1"
                 >
                     Pengguna
                 </a>
@@ -142,7 +144,7 @@
                     class="block px-4 py-3 rounded-md
                            text-[#dce8df]
                            hover:bg-[#315a45]
-                           text-sm transition"
+                           text-sm transition mb-1"
                 >
                     Audit Log
                 </a>
@@ -181,11 +183,13 @@
 
                 </div>
 
+
                 <form
                     method="POST"
                     action="{{ route('logout') }}"
                     class="mt-5"
                 >
+
                     @csrf
 
                     <button

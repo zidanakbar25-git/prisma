@@ -4,6 +4,7 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -52,6 +53,9 @@ Route::get('/dashboard/intern', function () {
 */
 
 Route::middleware('auth')->group(function () {
+    Route::get('/pengguna', [UserController::class, 'index'])
+    ->middleware('role:kabag')
+    ->name('users.index');
 
     /*
     |--------------------------------------------------------------------------
@@ -125,26 +129,29 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::get(
-        '/to-do',
-        [TaskController::class, 'index']
-    )
-        ->name('tasks.index');
+    Route::get('/to-do', [TaskController::class, 'index'])
+    ->name('tasks.index');
 
-    Route::get(
-        '/to-do/tambah',
-        [TaskController::class, 'create']
-    )
-        ->middleware('role:kabag')
-        ->name('tasks.create');
+Route::get('/to-do/tambah', [TaskController::class, 'create'])
+    ->middleware('role:kabag')
+    ->name('tasks.create');
 
-    Route::post(
-        '/to-do',
-        [TaskController::class, 'store']
-    )
-        ->middleware('role:kabag')
-        ->name('tasks.store');
+Route::post('/to-do', [TaskController::class, 'store'])
+    ->middleware('role:kabag')
+    ->name('tasks.store');
 
-        Route::put('/to-do/{task}/status', [TaskController::class, 'updateStatus'])
+Route::get('/to-do/{task}/edit', [TaskController::class, 'edit'])
+    ->middleware('role:kabag')
+    ->name('tasks.edit');
+
+Route::put('/to-do/{task}', [TaskController::class, 'update'])
+    ->middleware('role:kabag')
+    ->name('tasks.update');
+
+Route::delete('/to-do/{task}', [TaskController::class, 'destroy'])
+    ->middleware('role:kabag')
+    ->name('tasks.destroy');
+
+Route::put('/to-do/{task}/status', [TaskController::class, 'updateStatus'])
     ->name('tasks.update-status');
 });

@@ -19,9 +19,11 @@
             </div>
 
             @if(auth()->user()->role === 'kabag')
+
                 <a
                     href="{{ route('tasks.create') }}"
-                    class="shrink-0 rounded-md
+                    class="shrink-0
+                           rounded-md
                            bg-[#234936]
                            px-5 py-3
                            text-sm font-medium
@@ -31,6 +33,7 @@
                 >
                     Tambah To-Do
                 </a>
+
             @endif
 
         </div>
@@ -38,19 +41,24 @@
 
         {{-- Filter --}}
         <div
-            class="bg-white
+            class="rounded-md
                    border border-[#e2e7e2]
-                   rounded-md
+                   bg-white
                    px-5 py-4"
         >
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div
+                class="grid grid-cols-1
+                       gap-4
+                       md:grid-cols-3"
+            >
 
                 {{-- Search --}}
                 <div>
 
                     <label
-                        class="block mb-2
+                        for="taskSearch"
+                        class="mb-2 block
                                text-sm font-medium
                                text-[#37443b]"
                     >
@@ -81,7 +89,8 @@
                 <div>
 
                     <label
-                        class="block mb-2
+                        for="priorityFilter"
+                        class="mb-2 block
                                text-sm font-medium
                                text-[#37443b]"
                     >
@@ -128,7 +137,8 @@
                 <div>
 
                     <label
-                        class="block mb-2
+                        for="statusFilter"
+                        class="mb-2 block
                                text-sm font-medium
                                text-[#37443b]"
                     >
@@ -202,14 +212,25 @@
                         'sedang' => 'Sedang',
                         'tinggi' => 'Tinggi',
                     ];
+
+                    $priorityClass = match ($task->priority) {
+                        'tinggi' =>
+                            'bg-[#f9eeee] text-[#9b4040] border-[#efd6d6]',
+
+                        'sedang' =>
+                            'bg-[#faf6e8] text-[#806b27] border-[#eadfba]',
+
+                        default =>
+                            'bg-[#edf5ef] text-[#315c40] border-[#d5e5d8]',
+                    };
                 @endphp
 
 
                 <div
                     class="task-item
-                           bg-white
-                           border border-[#e2e7e2]
                            rounded-md
+                           border border-[#e2e7e2]
+                           bg-white
                            px-5 py-5"
                     data-title="{{ strtolower($task->title) }}"
                     data-priority="{{ $task->priority }}"
@@ -218,70 +239,66 @@
 
                     <div
                         class="flex flex-col
+                               gap-5
                                lg:flex-row
                                lg:items-start
-                               lg:justify-between
-                               gap-5"
+                               lg:justify-between"
                     >
 
-                        {{-- Informasi tugas --}}
+                        {{-- Informasi utama --}}
                         <div class="min-w-0 flex-1">
 
-                            <div class="flex items-start gap-3">
+                            {{-- Judul + Badge Baru --}}
+                            <div class="flex items-center gap-3">
 
-                                <div class="min-w-0">
+                                <h3
+                                    class="text-base
+                                           font-semibold
+                                           text-[#24332a]"
+                                >
+                                    {{ $task->title }}
+                                </h3>
 
-                                    <div class="flex items-center gap-3">
 
-    <h3
-        class="text-base
-               font-semibold
-               text-[#24332a]"
-    >
-        {{ $task->title }}
-    </h3>
+                                @if(
+                                    auth()->user()->role !== 'kabag' &&
+                                    $currentAssignment &&
+                                    ($currentAssignment->pivot->was_unread ?? false)
+                                )
 
-    @if(
-        auth()->user()->role !== 'kabag' &&
-        $currentAssignment &&
-        ($currentAssignment->pivot->was_unread ?? false)
-    )
+                                    <span
+                                        class="inline-flex
+                                               items-center
+                                               rounded-md
+                                               border border-[#d5e5d8]
+                                               bg-[#edf5ef]
+                                               px-2 py-1
+                                               text-[10px]
+                                               font-semibold
+                                               tracking-wide
+                                               text-[#315c40]"
+                                    >
+                                        BARU
+                                    </span>
 
-        <span
-            class="inline-flex
-                   items-center
-                   rounded-md
-                   bg-[#edf5ef]
-                   border border-[#d5e5d8]
-                   px-2 py-1
-                   text-[10px]
-                   font-semibold
-                   tracking-wide
-                   text-[#315c40]"
-        >
-            BARU
-        </span>
-
-    @endif
-
-</div>
-
-                                    @if($task->description)
-
-                                        <p
-                                            class="mt-2
-                                                   text-sm
-                                                   leading-6
-                                                   text-[#6b7280]"
-                                        >
-                                            {{ $task->description }}
-                                        </p>
-
-                                    @endif
-
-                                </div>
+                                @endif
 
                             </div>
+
+
+                            {{-- Deskripsi --}}
+                            @if($task->description)
+
+                                <p
+                                    class="mt-2
+                                           text-sm
+                                           leading-6
+                                           text-[#6b7280]"
+                                >
+                                    {{ $task->description }}
+                                </p>
+
+                            @endif
 
 
                             {{-- Metadata --}}
@@ -289,13 +306,15 @@
                                 class="mt-4
                                        flex flex-wrap
                                        items-center
-                                       gap-x-5 gap-y-2
+                                       gap-x-5
+                                       gap-y-2
                                        text-xs
                                        text-[#6b7280]"
                             >
 
                                 <span>
                                     Deadline:
+
                                     <strong
                                         class="font-medium
                                                text-[#37443b]"
@@ -304,8 +323,10 @@
                                     </strong>
                                 </span>
 
+
                                 <span>
                                     Dibuat oleh:
+
                                     <strong
                                         class="font-medium
                                                text-[#37443b]"
@@ -317,19 +338,20 @@
                             </div>
 
 
-                            {{-- Penerima --}}
+                            {{-- Penerima untuk Kabag --}}
                             @if(auth()->user()->role === 'kabag')
 
-                                <div class="mt-4">
+                                <div class="mt-5">
 
                                     <div
-                                        class="text-xs
+                                        class="mb-2
+                                               text-xs
                                                font-medium
-                                               text-[#6b7280]
-                                               mb-2"
+                                               text-[#6b7280]"
                                     >
                                         Penerima
                                     </div>
+
 
                                     <div class="space-y-2">
 
@@ -337,10 +359,10 @@
 
                                             <div
                                                 class="flex
+                                                       max-w-xl
                                                        items-center
                                                        justify-between
                                                        gap-4
-                                                       max-w-xl
                                                        border-b
                                                        border-[#edf0ed]
                                                        pb-2
@@ -355,11 +377,16 @@
                                                     {{ $assignee->name }}
                                                 </span>
 
+
                                                 <span
                                                     class="text-xs
                                                            text-[#6b7280]"
                                                 >
-                                                    {{ $statusLabels[$assignee->pivot->status] ?? '-' }}
+                                                    {{
+                                                        $statusLabels[
+                                                            $assignee->pivot->status
+                                                        ] ?? '-'
+                                                    }}
                                                 </span>
 
                                             </div>
@@ -377,32 +404,20 @@
 
                         {{-- Bagian kanan --}}
                         <div
-                            class="shrink-0
-                                   flex flex-col
+                            class="flex
+                                   shrink-0
+                                   flex-col
                                    items-start
-                                   lg:items-end
-                                   gap-3"
+                                   gap-3
+                                   lg:items-end"
                         >
 
                             {{-- Prioritas --}}
-                            @php
-                                $priorityClass = match ($task->priority) {
-                                    'tinggi' =>
-                                        'bg-[#f9eeee] text-[#9b4040] border-[#efd6d6]',
-
-                                    'sedang' =>
-                                        'bg-[#faf6e8] text-[#806b27] border-[#eadfba]',
-
-                                    default =>
-                                        'bg-[#edf5ef] text-[#315c40] border-[#d5e5d8]',
-                                };
-                            @endphp
-
                             <span
                                 class="inline-flex
                                        items-center
-                                       border
                                        rounded-md
+                                       border
                                        px-3 py-1.5
                                        text-xs
                                        font-medium
@@ -414,7 +429,10 @@
 
 
                             {{-- Status Staff / Intern --}}
-                            @if(auth()->user()->role !== 'kabag' && $currentAssignment)
+                            @if(
+                                auth()->user()->role !== 'kabag' &&
+                                $currentAssignment
+                            )
 
                                 <form
                                     method="POST"
@@ -422,10 +440,13 @@
                                 >
 
                                     @csrf
+
                                     @method('PUT')
 
+
                                     <label
-                                        class="block mb-1.5
+                                        for="status-{{ $task->id }}"
+                                        class="mb-1.5 block
                                                text-xs
                                                font-medium
                                                text-[#6b7280]"
@@ -433,7 +454,9 @@
                                         Status Saya
                                     </label>
 
+
                                     <select
+                                        id="status-{{ $task->id }}"
                                         name="status"
                                         onchange="this.form.submit()"
                                         class="min-w-[190px]
@@ -476,6 +499,65 @@
 
                             @endif
 
+
+                            {{-- Tombol Edit + Hapus --}}
+                            @if(auth()->user()->role === 'kabag')
+
+                                <div
+                                    class="flex
+                                           items-center
+                                           gap-2"
+                                >
+
+                                    {{-- Edit --}}
+                                    <a
+                                        href="{{ route('tasks.edit', $task) }}"
+                                        class="rounded-md
+                                               border border-[#d9dfda]
+                                               bg-white
+                                               px-3 py-2
+                                               text-xs
+                                               font-medium
+                                               text-[#37443b]
+                                               transition
+                                               hover:bg-[#f7f8f6]"
+                                    >
+                                        Edit
+                                    </a>
+
+
+                                    {{-- Hapus --}}
+                                    <form
+                                        method="POST"
+                                        action="{{ route('tasks.destroy', $task) }}"
+                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus To-Do ini?');"
+                                    >
+
+                                        @csrf
+
+                                        @method('DELETE')
+
+                                        <button
+                                            type="submit"
+                                            class="rounded-md
+                                                   border border-[#efd6d6]
+                                                   bg-white
+                                                   px-3 py-2
+                                                   text-xs
+                                                   font-medium
+                                                   text-[#9b4040]
+                                                   transition
+                                                   hover:bg-[#faf0f0]"
+                                        >
+                                            Hapus
+                                        </button>
+
+                                    </form>
+
+                                </div>
+
+                            @endif
+
                         </div>
 
                     </div>
@@ -484,10 +566,11 @@
 
             @empty
 
+                {{-- Tidak ada data --}}
                 <div
-                    class="bg-white
+                    class="rounded-md
                            border border-[#e2e7e2]
-                           rounded-md
+                           bg-white
                            px-6 py-12
                            text-center"
                 >
@@ -512,6 +595,36 @@
 
             @endforelse
 
+
+            {{-- Hasil filter kosong --}}
+            <div
+                id="emptyFilterMessage"
+                class="hidden
+                       rounded-md
+                       border border-[#e2e7e2]
+                       bg-white
+                       px-6 py-12
+                       text-center"
+            >
+
+                <p
+                    class="text-sm
+                           font-medium
+                           text-[#37443b]"
+                >
+                    Tidak ada To-Do yang sesuai.
+                </p>
+
+                <p
+                    class="mt-1
+                           text-sm
+                           text-[#6b7280]"
+                >
+                    Coba ubah kata pencarian atau filter.
+                </p>
+
+            </div>
+
         </div>
 
     </div>
@@ -533,6 +646,9 @@
             const taskItems =
                 document.querySelectorAll('.task-item');
 
+            const emptyFilterMessage =
+                document.getElementById('emptyFilterMessage');
+
 
             function filterTasks() {
 
@@ -546,6 +662,8 @@
 
                 const status =
                     statusFilter.value;
+
+                let visibleCount = 0;
 
 
                 taskItems.forEach(function (item) {
@@ -572,14 +690,31 @@
                         itemStatus === status;
 
 
-                    item.style.display =
+                    const shouldShow =
                         matchSearch &&
                         matchPriority &&
-                        matchStatus
-                            ? ''
-                            : 'none';
+                        matchStatus;
+
+
+                    item.style.display =
+                        shouldShow ? '' : 'none';
+
+
+                    if (shouldShow) {
+                        visibleCount++;
+                    }
 
                 });
+
+
+                if (
+                    taskItems.length > 0 &&
+                    visibleCount === 0
+                ) {
+                    emptyFilterMessage.classList.remove('hidden');
+                } else {
+                    emptyFilterMessage.classList.add('hidden');
+                }
 
             }
 
@@ -589,10 +724,12 @@
                 filterTasks
             );
 
+
             priorityFilter.addEventListener(
                 'change',
                 filterTasks
             );
+
 
             statusFilter.addEventListener(
                 'change',

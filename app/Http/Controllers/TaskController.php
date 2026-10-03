@@ -32,13 +32,6 @@ class TaskController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            /*
-             * Simpan status is_read yang sudah di-load
-             * ke dalam collection sebelum database diperbarui.
-             *
-             * Dengan begitu halaman masih bisa menampilkan
-             * tanda BARU untuk tugas yang baru diterima.
-             */
             foreach ($tasks as $task) {
                 $assignment = $task->assignees
                     ->firstWhere('id', $user->id);
@@ -49,11 +42,6 @@ class TaskController extends Controller
                 }
             }
 
-            /*
-             * Setelah halaman To-Do dibuka,
-             * semua tugas yang sebelumnya belum dibaca
-             * dianggap sudah dibaca.
-             */
             $taskIds = $tasks->pluck('id');
 
             if ($taskIds->isNotEmpty()) {
@@ -93,7 +81,233 @@ class TaskController extends Controller
             403
         );
 
+        $validated = $this->validateTask($request);
+
+        $validAssigneeIds = $this->getValidAssigneeIds(
+            $validated['assignee_ids']
+        );
+
+        if (
+            count($validAssigneeIds) !==
+            count(array_unique($validated['assignee_ids']))
+        ) {
+            return back()
+                ->withErrors([
+                    'assignee_ids' =>
+                        'Penerima hanya dapat berupa Staff atau Intern yang aktif.'
+                ])
+                ->withInput();
+        }
+
+        $task = Task::create([
+            'title' =>
+                $validated['title'],
+
+            'description' =>
+                $validated['description'] ?? null,
+
+            'priority' =>
+                $validated['priority'],
+
+            'due_date' =>
+                $validated['due_date'],
+
+            'created_by' =>
+                auth()->id(),
+        ]);
+
+        $assignments = [];
+
+        foreach ($validAssigneeIds as $userId) {
+            $assignments[$userId] = [
+                'status' => 'belum_mulai',
+                'is_read' => false,
+            ];
+        }
+
+        $task->assignees()->sync($assignments);
+
+        return redirect()
+            ->route('tasks.index')
+            ->with(
+                'success',
+                'To-Do berhasil ditambahkan.'
+            );
+    }
+
+
+    public function edit(Task $task)
+    {
+        abort_unless(
+            auth()->user()->role === 'kabag',
+            403
+        );
+
+        $task->load('assignees');
+
+        $users = User::whereIn('role', ['staff', 'intern'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view(
+            'tasks.edit',
+            compact('task', 'users')
+        );
+    }
+
+
+    public function update(
+        Request $request,
+        Task $task
+    ) {
+        abort_unless(
+            auth()->user()->role === 'kabag',
+            403
+        );
+
+        $validated = $this->validateTask($request);
+
+        $validAssigneeIds = $this->getValidAssigneeIds(
+            $validated['assignee_ids']
+        );
+
+        if (
+            count($validAssigneeIds) !==
+            count(array_unique($validated['assignee_ids']))
+        ) {
+            return back()
+                ->withErrors([
+                    'assignee_ids' =>
+                        'Penerima hanya dapat berupa Staff atau Intern yang aktif.'
+                ])
+                ->withInput();
+        }
+
+        $task->update([
+            'title' =>
+                $validated['title'],
+
+            'description' =>
+                $validated['description'] ?? null,
+
+            'priority' =>
+                $validated['priority'],
+
+            'due_date' =>
+                $validated['due_date'],
+        ]);
+
+        /*
+         * Ambil assignment lama.
+         * Status dan is_read milik penerima lama
+         * akan dipertahankan.
+         */
+        $existingAssignments = $task->assignees()
+            ->get()
+            ->keyBy('id');
+
+        $assignments = [];
+
+        foreach ($validAssigneeIds as $userId) {
+
+            if ($existingAssignments->has($userId)) {
+
+                $oldAssignment =
+                    $existingAssignments->get($userId);
+
+                $assignments[$userId] = [
+                    'status' =>
+                        $oldAssignment->pivot->status,
+
+                    'is_read' =>
+                        $oldAssignment->pivot->is_read,
+                ];
+
+            } else {
+
+                $assignments[$userId] = [
+                    'status' => 'belum_mulai',
+                    'is_read' => false,
+                ];
+            }
+        }
+
+        $task->assignees()->sync($assignments);
+
+        return redirect()
+            ->route('tasks.index')
+            ->with(
+                'success',
+                'To-Do berhasil diperbarui.'
+            );
+    }
+
+
+    public function destroy(Task $task)
+    {
+        abort_unless(
+            auth()->user()->role === 'kabag',
+            403
+        );
+
+        $task->delete();
+
+        return redirect()
+            ->route('tasks.index')
+            ->with(
+                'success',
+                'To-Do berhasil dihapus.'
+            );
+    }
+
+
+    public function updateStatus(
+        Request $request,
+        Task $task
+    ) {
         $validated = $request->validate([
+            'status' => [
+                'required',
+                'in:belum_mulai,sedang_dikerjakan,selesai',
+            ],
+        ], [
+            'status.required' =>
+                'Status wajib dipilih.',
+
+            'status.in' =>
+                'Status yang dipilih tidak valid.',
+        ]);
+
+        $user = auth()->user();
+
+        $assignment = $task->assignees()
+            ->where('users.id', $user->id)
+            ->first();
+
+        if (!$assignment) {
+            abort(403, 'Anda tidak memiliki tugas ini.');
+        }
+
+        $task->assignees()->updateExistingPivot(
+            $user->id,
+            [
+                'status' => $validated['status'],
+            ]
+        );
+
+        return redirect()
+            ->route('tasks.index')
+            ->with(
+                'success',
+                'Status To-Do berhasil diperbarui.'
+            );
+    }
+
+
+    private function validateTask(Request $request)
+    {
+        return $request->validate([
             'title' => [
                 'required',
                 'string',
@@ -153,106 +367,18 @@ class TaskController extends Controller
             'assignee_ids.*.exists' =>
                 'Penerima yang dipilih tidak valid.',
         ]);
+    }
 
-        $validAssigneeIds = User::whereIn(
+
+    private function getValidAssigneeIds(array $assigneeIds)
+    {
+        return User::whereIn(
             'id',
-            $validated['assignee_ids']
+            $assigneeIds
         )
             ->whereIn('role', ['staff', 'intern'])
             ->where('is_active', true)
             ->pluck('id')
             ->toArray();
-
-        if (
-            count($validAssigneeIds) !==
-            count(array_unique($validated['assignee_ids']))
-        ) {
-            return back()
-                ->withErrors([
-                    'assignee_ids' =>
-                        'Penerima hanya dapat berupa Staff atau Intern yang aktif.'
-                ])
-                ->withInput();
-        }
-
-        $task = Task::create([
-            'title' =>
-                $validated['title'],
-
-            'description' =>
-                $validated['description'] ?? null,
-
-            'priority' =>
-                $validated['priority'],
-
-            'due_date' =>
-                $validated['due_date'],
-
-            'created_by' =>
-                auth()->id(),
-        ]);
-
-        $assignments = [];
-
-        foreach ($validAssigneeIds as $userId) {
-            $assignments[$userId] = [
-                'status' => 'belum_mulai',
-                'is_read' => false,
-            ];
-        }
-
-        $task->assignees()->sync(
-            $assignments
-        );
-
-        return redirect()
-            ->route('tasks.index')
-            ->with(
-                'success',
-                'To-Do berhasil ditambahkan.'
-            );
-    }
-
-
-    public function updateStatus(
-        Request $request,
-        Task $task
-    ) {
-        $validated = $request->validate([
-            'status' => [
-                'required',
-                'in:belum_mulai,sedang_dikerjakan,selesai',
-            ],
-        ], [
-            'status.required' =>
-                'Status wajib dipilih.',
-
-            'status.in' =>
-                'Status yang dipilih tidak valid.',
-        ]);
-
-        $user = auth()->user();
-
-        $assignment = $task->assignees()
-            ->where('users.id', $user->id)
-            ->first();
-
-        if (!$assignment) {
-            abort(403, 'Anda tidak memiliki tugas ini.');
-        }
-
-        $task->assignees()->updateExistingPivot(
-            $user->id,
-            [
-                'status' => $validated['status'],
-            ]
-        );
-
-        return redirect()
-            ->route('tasks.index')
-            ->with(
-                'success',
-                'Status To-Do berhasil diperbarui.'
-            );
     }
 }
