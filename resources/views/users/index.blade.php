@@ -228,30 +228,38 @@
                                                gap-2"
                                     >
 
-                                        <span
+                                        {{-- Edit --}}
+                                        <a
+                                            href="{{ route('users.edit', $user) }}"
                                             class="rounded-md
-                                                   border
-                                                   border-[#e2e7e2]
-                                                   bg-[#f7f8f6]
+                                                   border border-[#d9dfda]
+                                                   bg-white
                                                    px-3 py-2
                                                    text-xs
-                                                   text-[#9ca3af]"
+                                                   font-medium
+                                                   text-[#37443b]
+                                                   transition
+                                                   hover:bg-[#f7f8f6]"
                                         >
                                             Edit
-                                        </span>
+                                        </a>
 
 
-                                        <span
+                                        {{-- Reset Password --}}
+                                        <a
+                                            href="{{ route('users.reset-password', $user) }}"
                                             class="rounded-md
-                                                   border
-                                                   border-[#e2e7e2]
-                                                   bg-[#f7f8f6]
+                                                   border border-[#d9dfda]
+                                                   bg-white
                                                    px-3 py-2
                                                    text-xs
-                                                   text-[#9ca3af]"
+                                                   font-medium
+                                                   text-[#37443b]
+                                                   transition
+                                                   hover:bg-[#f7f8f6]"
                                         >
                                             Reset Password
-                                        </span>
+                                        </a>
 
                                     </div>
 

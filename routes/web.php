@@ -72,6 +72,31 @@ Route::post('/pengguna', [UserController::class, 'store'])
     ->middleware('role:kabag')
     ->name('users.store');
 
+Route::get('/pengguna/{user}/edit', [UserController::class, 'edit'])
+    ->middleware('role:kabag')
+    ->name('users.edit');
+
+Route::put('/pengguna/{user}', [UserController::class, 'update'])
+    ->middleware('role:kabag')
+    ->name('users.update');
+
+Route::get('/pengguna/{user}/reset-password', function (\App\Models\User $user) {
+    abort_unless(
+        auth()->user()->role === 'kabag',
+        403
+    );
+
+    return view(
+        'users.reset-password',
+        compact('user')
+    );
+})
+    ->name('users.reset-password');
+
+Route::put('/pengguna/{user}/reset-password', [UserController::class, 'resetPassword'])
+    ->middleware('role:kabag')
+    ->name('users.reset-password.store');
+
     /*
     |--------------------------------------------------------------------------
     | Kalender Kegiatan

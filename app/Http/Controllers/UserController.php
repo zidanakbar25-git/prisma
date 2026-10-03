@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -118,6 +119,139 @@ class UserController extends Controller
             ->with(
                 'success',
                 'Pengguna berhasil ditambahkan.'
+            );
+    }
+
+
+    public function edit(User $user)
+    {
+        abort_unless(
+            auth()->user()->role === 'kabag',
+            403
+        );
+
+        return view(
+            'users.edit',
+            compact('user')
+        );
+    }
+
+
+    public function update(
+        Request $request,
+        User $user
+    ) {
+        abort_unless(
+            auth()->user()->role === 'kabag',
+            403
+        );
+
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'username' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('users', 'username')
+                    ->ignore($user->id),
+            ],
+
+            'role' => [
+                'required',
+                'in:kabag,staff,intern',
+            ],
+        ], [
+            'name.required' =>
+                'Nama wajib diisi.',
+
+            'name.max' =>
+                'Nama maksimal 255 karakter.',
+
+            'username.required' =>
+                'Username wajib diisi.',
+
+            'username.max' =>
+                'Username maksimal 255 karakter.',
+
+            'username.unique' =>
+                'Username tersebut sudah digunakan.',
+
+            'role.required' =>
+                'Role wajib dipilih.',
+
+            'role.in' =>
+                'Role yang dipilih tidak valid.',
+        ]);
+
+        $user->update([
+            'name' =>
+                $validated['name'],
+
+            'username' =>
+                $validated['username'],
+
+            'role' =>
+                $validated['role'],
+        ]);
+
+        return redirect()
+            ->route('users.index')
+            ->with(
+                'success',
+                'Data pengguna berhasil diperbarui.'
+            );
+    }
+
+
+    public function resetPassword(
+        Request $request,
+        User $user
+    ) {
+        abort_unless(
+            auth()->user()->role === 'kabag',
+            403
+        );
+
+        $validated = $request->validate([
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+            ],
+
+            'password_confirmation' => [
+                'required',
+                'same:password',
+            ],
+        ], [
+            'password.required' =>
+                'Password baru wajib diisi.',
+
+            'password.min' =>
+                'Password minimal 8 karakter.',
+
+            'password_confirmation.required' =>
+                'Konfirmasi password wajib diisi.',
+
+            'password_confirmation.same' =>
+                'Konfirmasi password tidak sama.',
+        ]);
+
+        $user->update([
+            'password' =>
+                $validated['password'],
+        ]);
+
+        return redirect()
+            ->route('users.index')
+            ->with(
+                'success',
+                'Password pengguna berhasil direset.'
             );
     }
 }
