@@ -40,12 +40,21 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Kalender Kegiatan
-    |--------------------------------------------------------------------------
-    */
+   /*
+|--------------------------------------------------------------------------
+| Kalender Kegiatan
+|--------------------------------------------------------------------------
+*/
 
-    Route::get('/activities', [ActivityController::class, 'index'])
-        ->name('api.activities.index');
+Route::get('/activities', [ActivityController::class, 'index'])
+    ->name('api.activities.index');
+
+Route::get('/activities/{activity}', [ActivityController::class, 'show'])
+    ->name('api.activities.show');
+
+Route::post('/activities', [ActivityController::class, 'store'])
+    ->name('api.activities.store');
+
+    Route::put('/activities/{activity}', [ActivityController::class, 'update'])
+    ->name('api.activities.update');
 });
