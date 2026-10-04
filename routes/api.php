@@ -57,4 +57,7 @@ Route::post('/activities', [ActivityController::class, 'store'])
 
     Route::put('/activities/{activity}', [ActivityController::class, 'update'])
     ->name('api.activities.update');
+
+    Route::delete('/activities/{activity}', [ActivityController::class, 'destroy'])
+    ->name('api.activities.destroy');
 });

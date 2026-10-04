@@ -249,6 +249,32 @@ class ActivityController extends Controller
     }
 
     /**
+ * Menghapus kegiatan.
+ */
+public function destroy(Request $request, Activity $activity): JsonResponse
+{
+    if ($request->user()->role !== 'kabag') {
+        return response()->json([
+            'message' => 'Anda tidak memiliki akses untuk menghapus kegiatan.',
+        ], 403);
+    }
+
+    $activityTitle = $activity->title;
+
+    $activity->delete();
+
+    ActivityLog::create([
+        'user_id' => $request->user()->id,
+        'action' => 'Hapus Kegiatan API',
+        'description' => 'Menghapus kegiatan "' . $activityTitle . '" melalui API.',
+    ]);
+
+    return response()->json([
+        'message' => 'Kegiatan berhasil dihapus.',
+    ], 200);
+}
+
+    /**
      * Memformat data kegiatan untuk response JSON.
      */
     private function formatActivity(Activity $activity): array
