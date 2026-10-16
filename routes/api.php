@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\AuditLogController;
 
 Route::post('/login', [AuthController::class, 'login'])
     ->name('api.login');
@@ -56,4 +58,34 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::put('/tasks/{task}/status', [TaskController::class, 'updateStatus'])
         ->name('api.tasks.update-status');
+
+    // =========================
+    // USER MANAGEMENT
+    // =========================
+
+    Route::get('/users', [UserController::class, 'index'])
+        ->name('api.users.index');
+
+    Route::get('/users/{user}', [UserController::class, 'show'])
+        ->name('api.users.show');
+
+    Route::post('/users', [UserController::class, 'store'])
+        ->name('api.users.store');
+
+    Route::put('/users/{user}', [UserController::class, 'update'])
+        ->name('api.users.update');
+
+    Route::put('/users/{user}/reset-password', [UserController::class, 'resetPassword'])
+        ->name('api.users.reset-password');
+
+    Route::put('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])
+        ->name('api.users.toggle-status');
+
+
+    // =========================
+    // AUDIT LOG
+    // =========================
+
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])
+        ->name('api.audit-logs.index');
 });
