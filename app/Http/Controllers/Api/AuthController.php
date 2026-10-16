@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -57,5 +58,30 @@ class AuthController extends Controller
                 'is_active' => $user->is_active,
             ],
         ], 200);
+    }
+
+    /**
+     * Logout API dengan mencabut token Sanctum saat ini.
+     */
+    public function logout(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        ActivityLog::create([
+            'user_id' => $user->id,
+            'action' => 'Logout API',
+            'description' => 'Pengguna "' . $user->name
+                . '" berhasil logout melalui API.',
+        ]);
+
+        $currentToken = $user->currentAccessToken();
+
+        if ($currentToken) {
+            $currentToken->delete();
+        }
+
+        return response()->json([
+            'message' => 'Logout API berhasil.',
+        ]);
     }
 }

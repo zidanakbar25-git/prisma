@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AuditLogController;
+use App\Http\Controllers\Api\BackupController;
 
 Route::post('/login', [AuthController::class, 'login'])
     ->name('api.login');
@@ -88,4 +89,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/audit-logs', [AuditLogController::class, 'index'])
         ->name('api.audit-logs.index');
+
+    // =========================
+    // BACKUP DATABASE
+    // =========================
+
+    Route::get('/backup/database', [BackupController::class, 'download'])
+        ->name('api.backup.download');
+
+
+    //logout
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->name('api.logout');
+
 });
