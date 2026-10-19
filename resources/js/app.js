@@ -51,11 +51,13 @@ document.addEventListener('DOMContentLoaded', function () {
         'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'
     ];
 
+    const iconAttr = 'width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0"';
+
     const icons = {
-        clock: '<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
-        pin: '<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>',
-        edit: '<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
-        trash: '<svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>'
+        clock: `<svg ${iconAttr}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`,
+        pin: `<svg ${iconAttr}><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
+        edit: `<svg ${iconAttr}><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>`,
+        trash: `<svg ${iconAttr}><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>`
     };
 
     const today = new Date();
@@ -242,7 +244,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (time) {
-            time.textContent = activity.time_label || '-';
+            time.textContent = activity.time_label
+                ? `${activity.time_label} WIB`
+                : '-';
         }
 
         if (location) {
@@ -265,18 +269,26 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!activity.pics || activity.pics.length === 0) {
                 const emptyPic = document.createElement('p');
 
-                emptyPic.className = 'text-sm text-[#111827]';
+                emptyPic.className = 'text-sm text-[#68746D]';
                 emptyPic.textContent = '-';
 
                 pics.appendChild(emptyPic);
             } else {
                 activity.pics.forEach(function (pic) {
-                    const item = document.createElement('p');
+                    const chip = document.createElement('span');
 
-                    item.className = 'text-sm text-[#111827]';
-                    item.textContent = `${pic.name} (${capitalize(pic.role)})`;
+                    chip.textContent = `${pic.name} · ${capitalize(pic.role)}`;
 
-                    pics.appendChild(item);
+                    chip.style.display = 'inline-flex';
+                    chip.style.alignItems = 'center';
+                    chip.style.padding = '6px 14px';
+                    chip.style.borderRadius = '9999px';
+                    chip.style.backgroundColor = '#EEF3EF';
+                    chip.style.color = '#24332A';
+                    chip.style.fontSize = '13px';
+                    chip.style.fontWeight = '500';
+
+                    pics.appendChild(chip);
                 });
             }
         }
@@ -425,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
         calendarGrid.innerHTML = '';
-        calendarGrid.style.gridAutoRows = '64px';
+        calendarGrid.style.gridAutoRows = '52px';
         calendarGrid.style.alignItems = 'start';
         calendarGrid.style.alignContent = 'start';
 
@@ -487,52 +499,57 @@ document.addEventListener('DOMContentLoaded', function () {
         const button = document.createElement('button');
 
         button.type = 'button';
-        button.className =
-            'flex h-16 w-full items-start justify-center pt-1 text-sm';
+        button.className = 'flex w-full items-start justify-center';
+        button.style.height = '52px';
 
-        const content = document.createElement('span');
+        const box = document.createElement('span');
 
-        content.className = 'flex w-10 flex-col items-center';
-
-        const number = document.createElement('span');
-
-        number.textContent = date.getDate();
-
-        let numberClass =
-            'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl leading-none transition ';
+        box.className = 'relative flex items-center justify-center text-sm transition';
+        box.style.width = '44px';
+        box.style.height = '44px';
+        box.style.borderRadius = '12px';
+        box.textContent = date.getDate();
 
         if (isSelected) {
-            numberClass += 'bg-[#1B2F5B] font-medium text-white';
+            box.style.backgroundColor = '#234936';
+            box.style.color = '#FFFFFF';
+            box.style.fontWeight = '500';
         } else if (isToday) {
-            numberClass += 'bg-[#D9ECFA] text-[#111827]';
+            box.style.backgroundColor = '#DCEBE1';
+            box.style.color = '#24332A';
         } else if (isOtherMonth) {
-            numberClass += 'text-[#94A3B8]';
+            box.style.color = '#B8C0BA';
         } else {
-            numberClass += 'text-[#111827] hover:bg-white';
+            box.style.color = '#24332A';
+            box.classList.add('hover:bg-white');
         }
 
-        number.className = numberClass;
-
-        content.appendChild(number);
-
-        // Titik indikator: merah = ada yang belum dibaca, navy = semua sudah dibaca
         if (eventsForDate.length > 0) {
-            const indicator = document.createElement('span');
+            const dot = document.createElement('span');
 
-            indicator.className =
-                'mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full ' +
-                (hasUnread ? 'bg-[#DC2626]' : 'bg-[#1B2F5B]');
+            dot.style.position = 'absolute';
+            dot.style.bottom = '5px';
+            dot.style.left = '50%';
+            dot.style.transform = 'translateX(-50%)';
+            dot.style.width = '6px';
+            dot.style.height = '6px';
+            dot.style.borderRadius = '9999px';
 
-            if (isOtherMonth) {
-                indicator.style.opacity = '0.35';
+            if (hasUnread) {
+                dot.style.backgroundColor = '#DC2626';
+            } else {
+                dot.style.backgroundColor = isSelected ? '#FFFFFF' : '#234936';
             }
 
-            content.appendChild(indicator);
+            if (isOtherMonth) {
+                dot.style.opacity = '0.35';
+            }
+
+            box.appendChild(dot);
         }
 
-        button.appendChild(content);
+        button.appendChild(box);
 
-        // Tanggal bulan lain tetap bisa diklik untuk pindah bulan.
         button.addEventListener('click', function () {
             selectedDate = dateKey;
 
@@ -577,9 +594,30 @@ document.addEventListener('DOMContentLoaded', function () {
             item.className =
                 'rounded-xl border border-[#E5E9F0] bg-[#F8FAFC] p-5';
 
+            // Hover: berubah hijau, kembali normal saat kursor keluar
+            item.style.transition = 'background-color 150ms ease, border-color 150ms ease';
+
+            item.addEventListener('mouseenter', function () {
+                item.style.backgroundColor = '#E3EEE6';
+                item.style.borderColor = '#234936';
+            });
+
+            item.addEventListener('mouseleave', function () {
+                item.style.backgroundColor = '';
+                item.style.borderColor = '';
+            });
+
+            const metaItemStyle = 'display:flex;align-items:center;gap:6px;';
+
             const locationHtml = event.location
-                ? `<span class="flex items-center gap-1.5">${icons.pin}${escapeHtml(event.location)}</span>`
+                ? `<span style="${metaItemStyle}">${icons.pin}${escapeHtml(event.location)}</span>`
                 : '';
+
+            const squareButtonStyle =
+                'display:flex;align-items:center;justify-content:center;' +
+                'width:40px;height:40px;flex:none;border-radius:8px;' +
+                'border:1px solid #E5E9F0;background:#FFFFFF;' +
+                'box-shadow:0 1px 2px rgba(0,0,0,0.06);cursor:pointer;';
 
             const badgeHtml = event.is_unread
                 ? '<span class="shrink-0 rounded-full bg-[#DC2626] px-3 py-0.5 text-xs font-semibold text-white">Baru</span>'
@@ -587,17 +625,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const actionsHtml = canManage
                 ? `
-                    <div class="mt-3 flex gap-2">
-                        <button type="button" aria-label="Edit"
-                            class="activity-edit-button flex h-10 w-10 items-center justify-center rounded-lg border border-[#E5E9F0] bg-white text-[#111827] shadow-sm transition hover:bg-[#F1F5F9]">
-                            ${icons.edit}
-                        </button>
-                        <button type="button" aria-label="Hapus"
-                            class="activity-delete-button flex h-10 w-10 items-center justify-center rounded-lg border border-[#E5E9F0] bg-white text-[#DC2626] shadow-sm transition hover:bg-[#FEF2F2]">
-                            ${icons.trash}
-                        </button>
-                    </div>
-                `
+                 <div style="display:flex;gap:8px;margin-top:12px;">
+                    <button type="button" aria-label="Edit"
+                        class="activity-edit-button"
+                        style="${squareButtonStyle}color:#24332A;">
+                        ${icons.edit}
+                    </button>
+                <button type="button" aria-label="Hapus"
+                    class="activity-delete-button"
+                    style="${squareButtonStyle}color:#DC2626;">
+                    ${icons.trash}
+                </button>
+            </div>
+    `
                 : '';
 
             item.innerHTML = `
@@ -608,8 +648,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     ${badgeHtml}
                 </div>
 
-                <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#64748B]">
-                    <span class="flex items-center gap-1.5">
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin-top:8px;font-size:14px;color:#68746D;">
+                    <span style="${metaItemStyle}">
                         ${icons.clock}${escapeHtml(event.time_label || '-')}
                     </span>
                     ${locationHtml}

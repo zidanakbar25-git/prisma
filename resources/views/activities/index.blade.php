@@ -458,74 +458,113 @@
     >
 
         <div
-            class="w-full max-w-xl rounded-2xl border border-[#E5E9F0] bg-white shadow-xl"
+            class="relative w-full max-w-2xl rounded-2xl border border-[#E2E8E4] bg-white shadow-xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="detail-activity-title"
         >
 
-            <div class="flex items-start justify-between border-b border-[#E5E9F0] px-6 py-5">
+            {{-- Tombol close (ikon X) --}}
+            <button
+                type="button"
+                data-close-modal="detail"
+                aria-label="Tutup"
+                class="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-[#68746D] transition hover:bg-[#F1F4F1] hover:text-[#24332A]"
+            >
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
 
-                <div>
-                    <p class="text-xs font-medium uppercase tracking-wide text-[#64748B]">
-                        Detail Kegiatan
-                    </p>
-                    <h2 id="detail-activity-title" class="mt-1 text-xl font-semibold text-[#111827]">
-                        -
-                    </h2>
-                </div>
+            <div class="max-h-[75vh] overflow-y-auto px-6 pb-6 pt-6">
 
-                <button
-                    type="button"
-                    data-close-modal="detail"
-                    class="text-sm font-medium text-[#64748B] transition hover:text-[#111827]"
+                {{-- Judul --}}
+                <h2
+                    id="detail-activity-title"
+                    class="pr-10 text-2xl font-semibold tracking-tight text-[#24332A]"
                 >
-                    Tutup
-                </button>
+                    -
+                </h2>
 
-            </div>
+                <p class="mt-1 text-sm text-[#68746D]">
+                    Rincian jadwal kegiatan dan tugas.
+                </p>
 
-            <div class="px-6 py-6">
 
-                <div class="space-y-5">
+                {{-- Info: tanggal, waktu, lokasi --}}
+                <div class="mt-5 grid grid-cols-1 gap-x-6 gap-y-3 rounded-xl border border-[#E2E8E4] bg-[#F4F7F5] p-5 sm:grid-cols-2">
 
-                    <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-[#64748B]">Tanggal</p>
-                        <p id="detail-date" class="mt-1 text-sm text-[#111827]">-</p>
+                    <div class="flex items-center gap-3 text-sm text-[#24332A]">
+                        <svg class="shrink-0" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/>
+                            <path d="M16 2v4M8 2v4M3 10h18"/>
+                        </svg>
+                        <span id="detail-date">-</span>
                     </div>
 
-                    <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-[#64748B]">Waktu</p>
-                        <p id="detail-time" class="mt-1 text-sm text-[#111827]">-</p>
+                    <div class="flex items-center gap-3 text-sm text-[#24332A]">
+                        <svg class="shrink-0" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v6l4 2"/>
+                        </svg>
+                        <span id="detail-time">-</span>
                     </div>
 
-                    <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-[#64748B]">Lokasi</p>
-                        <p id="detail-location" class="mt-1 text-sm text-[#111827]">-</p>
-                    </div>
-
-                    <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-[#64748B]">PIC</p>
-                        <div id="detail-pics" class="mt-2 space-y-1"></div>
-                    </div>
-
-                    <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-[#64748B]">Deskripsi</p>
-                        <p id="detail-description" class="mt-1 whitespace-pre-line text-sm leading-6 text-[#111827]">-</p>
-                    </div>
-
-                    <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-[#64748B]">Dibuat Oleh</p>
-                        <p id="detail-creator" class="mt-1 text-sm text-[#111827]">-</p>
+                    <div class="flex items-center gap-3 text-sm text-[#24332A]">
+                        <svg class="shrink-0" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span id="detail-location">-</span>
                     </div>
 
                 </div>
 
+
+                {{-- Ditugaskan kepada --}}
+                <h3 class="mt-6 flex items-center gap-2 text-sm font-semibold text-[#24332A]">
+                    <svg class="shrink-0" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    Ditugaskan kepada
+                </h3>
+
+                <div
+                    id="detail-pics"
+                    class="mt-3 flex flex-wrap gap-2"
+                ></div>
+
+
+                {{-- Deskripsi --}}
+                <h3 class="mt-6 text-sm font-semibold text-[#24332A]">
+                    Deskripsi Tugas
+                </h3>
+
+                <div class="mt-3 rounded-xl border border-[#E2E8E4] bg-white p-5">
+                    <p
+                        id="detail-description"
+                        class="whitespace-pre-line text-sm leading-6 text-[#24332A]"
+                    >
+                        -
+                    </p>
+                </div>
+
+
+                {{-- Dibuat oleh --}}
+                <p class="mt-5 text-xs text-[#68746D]">
+                    Dibuat oleh
+                    <span id="detail-creator" class="font-medium text-[#24332A]">-</span>
+                </p>
+
             </div>
 
-            <div class="flex items-center justify-between border-t border-[#E5E9F0] px-6 py-4">
 
-                @if($isKabag)
+            {{-- Footer --}}
+            <div class="flex items-center justify-between border-t border-[#E2E8E4] px-6 py-4">
+
+                @if(auth()->user()->role === 'kabag')
 
                     <form
                         id="delete-activity-form"
@@ -549,7 +588,7 @@
                     <button
                         type="button"
                         id="open-edit-from-detail"
-                        class="rounded-lg bg-[#1B2F5B] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#26407A]"
+                        class="rounded-lg bg-[#234936] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#315A45]"
                     >
                         Edit Kegiatan
                     </button>
@@ -561,7 +600,7 @@
                     <button
                         type="button"
                         data-close-modal="detail"
-                        class="rounded-lg border border-[#E5E9F0] bg-white px-4 py-2.5 text-sm font-medium text-[#111827] transition hover:bg-[#F1F5F9]"
+                        class="rounded-lg border border-[#E2E8E4] bg-white px-4 py-2.5 text-sm font-medium text-[#24332A] transition hover:bg-[#F1F4F1]"
                     >
                         Tutup
                     </button>
