@@ -39,6 +39,30 @@ document.addEventListener('DOMContentLoaded', function () {
     const editEndTime = document.getElementById('edit-end-time');
     const editNoEndTime = document.getElementById('edit-no-end-time');
 
+    const viewTabs = document.querySelectorAll('[data-view-tab]');
+    const listView = document.getElementById('list-view');
+    const monthList = document.getElementById('month-list');
+    const listMonthTitle = document.getElementById('list-month-title');
+    const listMonthCount = document.getElementById('list-month-count');
+    const listPreviousButton = document.getElementById('list-previous-month');
+    const listNextButton = document.getElementById('list-next-month');
+    const listTodayButton = document.getElementById('list-today-month');
+
+    const historyView = document.getElementById('history-view');
+    const historyList = document.getElementById('history-list');
+    const historyMonth = document.getElementById('history-month');
+    const historyStart = document.getElementById('history-start');
+    const historyEnd = document.getElementById('history-end');
+    const historyReset = document.getElementById('history-reset');
+    const historyExport = document.getElementById('history-export');
+
+    const exportModal = document.getElementById('export-activity-modal');
+    const openExportButton = document.getElementById('open-export-modal');
+    const exportForm = document.getElementById('export-form');
+    const exportMonthSection = document.getElementById('export-month-section');
+    const exportRangeSection = document.getElementById('export-range-section');
+    const exportError = document.getElementById('export-error');
+
     // Hanya kabag yang punya modal edit + form hapus (dirender Blade).
     const canManage = !!(editModal && deleteActivityForm);
 
@@ -141,6 +165,8 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.classList.remove('hidden');
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('overflow-hidden');
+
+        refreshSelectAllButtons();
     }
 
     function closeModal(modal) {
@@ -151,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.classList.add('hidden');
         modal.setAttribute('aria-hidden', 'true');
 
-        const anyModalOpen = [createModal, detailModal, editModal].some(
+        const anyModalOpen = [createModal, detailModal, editModal, exportModal].some(
             function (item) {
                 return item && !item.classList.contains('hidden');
             }
@@ -163,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function closeAllModals() {
-        [createModal, detailModal, editModal].forEach(function (modal) {
+        [createModal, detailModal, editModal, exportModal].forEach(function (modal) {
             if (!modal) {
                 return;
             }
@@ -186,6 +212,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (name === 'edit') {
             return editModal;
+        }
+
+        if (name === 'export') {
+            return exportModal;
         }
 
         return null;
@@ -524,6 +554,7 @@ document.addEventListener('DOMContentLoaded', function () {
             box.classList.add('hover:bg-white');
         }
 
+        // Titik: merah = ada yang belum dibaca, hijau = semua sudah dibaca
         if (eventsForDate.length > 0) {
             const dot = document.createElement('span');
 
@@ -567,7 +598,128 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Activity List
+    | Activity Card (dipakai oleh tampilan kalender dan tampilan daftar)
+    |--------------------------------------------------------------------------
+    */
+
+    function buildActivityCard(event) {
+        const metaItemStyle = 'display:flex;align-items:center;gap:6px;';
+
+        // Warna kartu: abu-abu kehijauan
+        const cardBg = '#E8EEEA';
+        const cardBorder = '#D2DCD5';
+        const cardBgHover = '#D9E4DC';
+        const cardBorderHover = '#234936';
+
+        const squareButtonStyle =
+            'display:flex;align-items:center;justify-content:center;' +
+            'width:36px;height:36px;flex:none;border-radius:8px;' +
+            'border:1px solid #CBD6CE;background:#FFFFFF;' +
+            'box-shadow:0 1px 2px rgba(0,0,0,0.06);cursor:pointer;';
+
+        const item = document.createElement('div');
+
+        item.className = 'rounded-xl';
+
+        // Seluruh kartu bisa diklik untuk membuka detail
+        item.style.cursor = 'pointer';
+        item.style.padding = '14px 18px';
+        item.style.backgroundColor = cardBg;
+        item.style.border = `1px solid ${cardBorder}`;
+        item.style.transition =
+            'background-color 150ms ease, border-color 150ms ease';
+
+        // Hover: lebih gelap + garis hijau, kembali normal saat kursor keluar
+        item.addEventListener('mouseenter', function () {
+            item.style.backgroundColor = cardBgHover;
+            item.style.borderColor = cardBorderHover;
+        });
+
+        item.addEventListener('mouseleave', function () {
+            item.style.backgroundColor = cardBg;
+            item.style.borderColor = cardBorder;
+        });
+
+        item.addEventListener('click', function () {
+            openDetailModal(event);
+        });
+
+        const locationHtml = event.location
+            ? `<span style="${metaItemStyle}">${icons.pin}${escapeHtml(event.location)}</span>`
+            : '';
+
+        const badgeHtml = event.is_unread
+            ? '<span style="flex:none;border-radius:9999px;background:#DC2626;color:#FFFFFF;padding:1px 10px;font-size:12px;font-weight:600;">Baru</span>'
+            : '';
+
+        const actionsHtml = canManage
+            ? `
+                <button type="button" aria-label="Edit"
+                    class="activity-edit-button"
+                    style="${squareButtonStyle}color:#24332A;">
+                    ${icons.edit}
+                </button>
+                <button type="button" aria-label="Hapus"
+                    class="activity-delete-button"
+                    style="${squareButtonStyle}color:#DC2626;">
+                    ${icons.trash}
+                </button>
+            `
+            : '';
+
+        item.innerHTML = `
+            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;">
+
+                <div style="min-width:0;flex:1 1 220px;">
+
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <h3 style="min-width:0;font-size:16px;font-weight:600;color:#24332A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                            ${escapeHtml(event.title)}
+                        </h3>
+                        ${badgeHtml}
+                    </div>
+
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;margin-top:4px;font-size:13px;color:#5C6B62;">
+                        <span style="${metaItemStyle}">
+                            ${icons.clock}${escapeHtml(event.time_label || '-')}
+                        </span>
+                        ${locationHtml}
+                    </div>
+
+                </div>
+
+                <div style="display:flex;align-items:center;gap:8px;flex:none;">
+                    ${actionsHtml}
+                    <span style="margin-left:6px;font-size:13px;font-weight:600;color:#24332A;white-space:nowrap;">
+                        Lihat detail ›
+                    </span>
+                </div>
+
+            </div>
+        `;
+
+        if (canManage) {
+            item
+                .querySelector('.activity-edit-button')
+                .addEventListener('click', function (e) {
+                    e.stopPropagation(); // jangan ikut membuka detail
+                    openEditModal(event);
+                });
+
+            item
+                .querySelector('.activity-delete-button')
+                .addEventListener('click', function (e) {
+                    e.stopPropagation(); // jangan ikut membuka detail
+                    deleteActivity(event);
+                });
+        }
+
+        return item;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Activity List (tampilan kalender: kegiatan pada tanggal terpilih)
     |--------------------------------------------------------------------------
     */
 
@@ -580,7 +732,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (selectedActivities.length === 0) {
             activityList.innerHTML = `
-                <p class="text-sm text-[#64748B]">
+                <p class="text-sm text-[#68746D]">
                     Tidak ada kegiatan pada tanggal ini.
                 </p>
             `;
@@ -589,105 +741,657 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         selectedActivities.forEach(function (event) {
-            const item = document.createElement('div');
-
-            item.className =
-                'rounded-xl border border-[#E5E9F0] bg-[#F8FAFC] p-5';
-
-            // Hover: berubah hijau, kembali normal saat kursor keluar
-            item.style.transition = 'background-color 150ms ease, border-color 150ms ease';
-
-            item.addEventListener('mouseenter', function () {
-                item.style.backgroundColor = '#E3EEE6';
-                item.style.borderColor = '#234936';
-            });
-
-            item.addEventListener('mouseleave', function () {
-                item.style.backgroundColor = '';
-                item.style.borderColor = '';
-            });
-
-            const metaItemStyle = 'display:flex;align-items:center;gap:6px;';
-
-            const locationHtml = event.location
-                ? `<span style="${metaItemStyle}">${icons.pin}${escapeHtml(event.location)}</span>`
-                : '';
-
-            const squareButtonStyle =
-                'display:flex;align-items:center;justify-content:center;' +
-                'width:40px;height:40px;flex:none;border-radius:8px;' +
-                'border:1px solid #E5E9F0;background:#FFFFFF;' +
-                'box-shadow:0 1px 2px rgba(0,0,0,0.06);cursor:pointer;';
-
-            const badgeHtml = event.is_unread
-                ? '<span class="shrink-0 rounded-full bg-[#DC2626] px-3 py-0.5 text-xs font-semibold text-white">Baru</span>'
-                : '';
-
-            const actionsHtml = canManage
-                ? `
-                 <div style="display:flex;gap:8px;margin-top:12px;">
-                    <button type="button" aria-label="Edit"
-                        class="activity-edit-button"
-                        style="${squareButtonStyle}color:#24332A;">
-                        ${icons.edit}
-                    </button>
-                <button type="button" aria-label="Hapus"
-                    class="activity-delete-button"
-                    style="${squareButtonStyle}color:#DC2626;">
-                    ${icons.trash}
-                </button>
-            </div>
-    `
-                : '';
-
-            item.innerHTML = `
-                <div class="flex items-start justify-between gap-3">
-                    <h3 class="min-w-0 truncate text-lg font-semibold text-[#111827]">
-                        ${escapeHtml(event.title)}
-                    </h3>
-                    ${badgeHtml}
-                </div>
-
-                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin-top:8px;font-size:14px;color:#68746D;">
-                    <span style="${metaItemStyle}">
-                        ${icons.clock}${escapeHtml(event.time_label || '-')}
-                    </span>
-                    ${locationHtml}
-                </div>
-
-                <div class="mt-3 flex justify-end">
-                    <button type="button"
-                        class="activity-detail-button flex items-center gap-1 text-sm font-semibold text-[#111827] transition hover:text-[#1B2F5B]">
-                        Lihat detail <span>›</span>
-                    </button>
-                </div>
-
-                ${actionsHtml}
-            `;
-
-            item
-                .querySelector('.activity-detail-button')
-                .addEventListener('click', function () {
-                    openDetailModal(event);
-                });
-
-            if (canManage) {
-                item
-                    .querySelector('.activity-edit-button')
-                    .addEventListener('click', function () {
-                        openEditModal(event);
-                    });
-
-                item
-                    .querySelector('.activity-delete-button')
-                    .addEventListener('click', function () {
-                        deleteActivity(event);
-                    });
-            }
-
-            activityList.appendChild(item);
+            activityList.appendChild(buildActivityCard(event));
         });
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Daftar Kegiatan Bulanan (tampilan daftar, tanpa kalender)
+    |--------------------------------------------------------------------------
+    */
+
+    function getEventsForMonth(year, month) {
+        const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+        return events
+            .filter(function (event) {
+                return event.start && event.start.substring(0, 7) === prefix;
+            })
+            .sort(function (a, b) {
+                // Format ISO (YYYY-MM-DDTHH:MM:SS) bisa diurutkan sebagai teks
+                return a.start.localeCompare(b.start);
+            });
+    }
+
+    function renderMonthList() {
+        if (!monthList) {
+            return;
+        }
+
+        const monthEvents = getEventsForMonth(currentYear, currentMonth);
+
+        if (listMonthTitle) {
+            listMonthTitle.textContent =
+                `${monthNames[currentMonth]} ${currentYear}`;
+        }
+
+        if (listMonthCount) {
+            listMonthCount.textContent = monthEvents.length > 0
+                ? `${monthEvents.length} kegiatan bulan ini`
+                : 'Belum ada kegiatan bulan ini';
+        }
+
+        monthList.innerHTML = '';
+
+        if (monthEvents.length === 0) {
+            monthList.innerHTML = `
+                <p class="text-sm text-[#68746D]">
+                    Tidak ada kegiatan pada bulan ini.
+                </p>
+            `;
+
+            return;
+        }
+
+        let lastDateKey = null;
+
+        monthEvents.forEach(function (event) {
+            const dateKey = event.start.substring(0, 10);
+
+            // Judul tanggal setiap kali tanggalnya berganti
+            if (dateKey !== lastDateKey) {
+                const heading = document.createElement('h3');
+
+                heading.textContent = formatSelectedDate(dateKey);
+                heading.style.fontSize = '14px';
+                heading.style.fontWeight = '600';
+                heading.style.color = '#68746D';
+                heading.style.marginTop = lastDateKey === null ? '0' : '24px';
+                heading.style.marginBottom = '12px';
+
+                monthList.appendChild(heading);
+
+                lastDateKey = dateKey;
+            }
+
+            const card = buildActivityCard(event);
+
+            card.style.marginBottom = '12px';
+
+            monthList.appendChild(card);
+        });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Riwayat (kegiatan yang sudah melewati hari ini, zona waktu WIB)
+    |--------------------------------------------------------------------------
+    */
+
+    function getTodayKeyJakarta() {
+        // en-CA menghasilkan format YYYY-MM-DD
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Jakarta',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(new Date());
+    }
+
+    function getPastEvents() {
+        const todayKey = getTodayKeyJakarta();
+
+        return events
+            .filter(function (event) {
+                return (
+                    event.start &&
+                    event.start.substring(0, 10) < todayKey
+                );
+            })
+            .sort(function (a, b) {
+                // Terbaru di atas
+                return b.start.localeCompare(a.start);
+            });
+    }
+
+    function populateHistoryMonths(pastEvents) {
+        if (!historyMonth) {
+            return;
+        }
+
+        const previous = historyMonth.value;
+        const months = [];
+
+        pastEvents.forEach(function (event) {
+            const key = event.start.substring(0, 7);
+
+            if (!months.includes(key)) {
+                months.push(key);
+            }
+        });
+
+        historyMonth.innerHTML = '';
+
+        const all = document.createElement('option');
+
+        all.value = '';
+        all.textContent = 'Semua bulan';
+        historyMonth.appendChild(all);
+
+        months.forEach(function (key) {
+            const parts = key.split('-');
+            const option = document.createElement('option');
+
+            option.value = key;
+            option.textContent =
+                `${monthNames[Number(parts[1]) - 1]} ${parts[0]}`;
+
+            historyMonth.appendChild(option);
+        });
+
+        historyMonth.value = months.includes(previous) ? previous : '';
+    }
+
+    function buildHistoryCard(event) {
+        const cardBg = '#E8EEEA';
+        const cardBorder = '#D2DCD5';
+        const cardBgHover = '#D9E4DC';
+        const cardBorderHover = '#234936';
+
+        const dateKey = event.start.substring(0, 10);
+
+        const item = document.createElement('div');
+
+        item.className = 'rounded-xl';
+        item.style.cursor = 'pointer';
+        item.style.display = 'flex';
+        item.style.flexDirection = 'column';
+        item.style.padding = '20px';
+        item.style.backgroundColor = cardBg;
+        item.style.border = `1px solid ${cardBorder}`;
+        item.style.transition =
+            'background-color 150ms ease, border-color 150ms ease';
+
+        item.addEventListener('mouseenter', function () {
+            item.style.backgroundColor = cardBgHover;
+            item.style.borderColor = cardBorderHover;
+        });
+
+        item.addEventListener('mouseleave', function () {
+            item.style.backgroundColor = cardBg;
+            item.style.borderColor = cardBorder;
+        });
+
+        item.addEventListener('click', function () {
+            openDetailModal(event);
+        });
+
+        const locationHtml = event.location
+            ? `
+                <p style="display:flex;align-items:flex-start;gap:8px;margin-top:10px;font-size:14px;line-height:1.4;color:#5C6B62;">
+                    <span style="margin-top:1px;">${icons.pin}</span>
+                    <span style="min-width:0;">${escapeHtml(event.location)}</span>
+                </p>
+            `
+            : '';
+
+        item.innerHTML = `
+            <p style="font-size:13px;font-weight:600;letter-spacing:0.02em;color:#234936;">
+                ${escapeHtml(formatSelectedDate(dateKey).toUpperCase())}
+            </p>
+
+            <h3 style="margin-top:14px;font-size:18px;font-weight:600;line-height:1.35;color:#24332A;">
+                ${escapeHtml(event.title)}
+            </h3>
+
+            ${locationHtml}
+
+            <div style="margin-top:auto;padding-top:16px;text-align:right;font-size:14px;font-weight:600;color:#24332A;">
+                Lihat detail ›
+            </div>
+        `;
+
+        return item;
+    }
+
+    function renderHistory() {
+        if (!historyList) {
+            return;
+        }
+
+        const pastEvents = getPastEvents();
+
+        populateHistoryMonths(pastEvents);
+
+        const month = historyMonth ? historyMonth.value : '';
+        const start = historyStart ? historyStart.value : '';
+        const end = historyEnd ? historyEnd.value : '';
+
+        const filtered = pastEvents.filter(function (event) {
+            const dateKey = event.start.substring(0, 10);
+
+            if (month && event.start.substring(0, 7) !== month) {
+                return false;
+            }
+
+            if (start && dateKey < start) {
+                return false;
+            }
+
+            if (end && dateKey > end) {
+                return false;
+            }
+
+            return true;
+        });
+
+        historyList.innerHTML = '';
+
+        if (filtered.length === 0) {
+            const message = pastEvents.length === 0
+                ? 'Belum ada riwayat kegiatan.'
+                : 'Tidak ada kegiatan pada filter ini.';
+
+            historyList.innerHTML = `
+                <p class="text-sm text-[#68746D]">${message}</p>
+            `;
+
+            return;
+        }
+
+        const grid = document.createElement('div');
+
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns =
+            'repeat(auto-fill, minmax(340px, 1fr))';
+        grid.style.gap = '16px';
+
+        filtered.forEach(function (event) {
+            grid.appendChild(buildHistoryCard(event));
+        });
+
+        historyList.appendChild(grid);
+    }
+
+    // Pilih bulan dan rentang tanggal saling menggantikan
+    if (historyMonth) {
+        historyMonth.addEventListener('change', function () {
+            if (historyStart) {
+                historyStart.value = '';
+            }
+
+            if (historyEnd) {
+                historyEnd.value = '';
+            }
+
+            renderHistory();
+        });
+    }
+
+    [historyStart, historyEnd].forEach(function (input) {
+        if (!input) {
+            return;
+        }
+
+        input.addEventListener('change', function () {
+            if (historyMonth) {
+                historyMonth.value = '';
+            }
+
+            renderHistory();
+        });
+    });
+
+    if (historyReset) {
+        historyReset.addEventListener('click', function () {
+            if (historyMonth) {
+                historyMonth.value = '';
+            }
+
+            if (historyStart) {
+                historyStart.value = '';
+            }
+
+            if (historyEnd) {
+                historyEnd.value = '';
+            }
+
+            renderHistory();
+        });
+    }
+
+    // Ekspor PDF: isi popup export sesuai filter yang sedang dipakai
+    if (historyExport) {
+        historyExport.addEventListener('click', function () {
+            const start = historyStart ? historyStart.value : '';
+            const end = historyEnd ? historyEnd.value : '';
+            const month = historyMonth ? historyMonth.value : '';
+
+            const setType = function (value) {
+                const radio = exportForm
+                    ? exportForm.querySelector(
+                        `input[name="filter_type"][value="${value}"]`
+                    )
+                    : null;
+
+                if (radio) {
+                    radio.checked = true;
+                }
+            };
+
+            if (start && end) {
+                const startInput = document.getElementById('export-start-date');
+                const endInput = document.getElementById('export-end-date');
+
+                setType('range');
+
+                if (startInput) {
+                    startInput.value = start;
+                }
+
+                if (endInput) {
+                    endInput.value = end;
+                }
+            } else if (month) {
+                const parts = month.split('-');
+
+                setType('month');
+
+                if (exportYearSelect) {
+                    exportYearSelect.value = parts[0];
+                }
+
+                if (exportMonthSelect) {
+                    exportMonthSelect.value = parts[1];
+                }
+
+                syncExportMonth();
+            }
+
+            openExportModal();
+        });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ganti Tampilan (Kalender / Daftar)
+    |--------------------------------------------------------------------------
+    */
+
+    let currentView = 'calendar';
+
+    function setView(view) {
+        currentView = view;
+
+        calendarEl.style.display = view === 'calendar' ? '' : 'none';
+
+        if (listView) {
+            listView.style.display = view === 'list' ? 'block' : 'none';
+        }
+
+        if (historyView) {
+            historyView.style.display = view === 'history' ? 'block' : 'none';
+        }
+
+        viewTabs.forEach(function (tab) {
+            const active = tab.dataset.viewTab === view;
+
+            tab.style.backgroundColor = active ? '#FFFFFF' : 'transparent';
+            tab.style.boxShadow = active ? '0 1px 2px rgba(0,0,0,0.08)' : 'none';
+            tab.style.fontWeight = active ? '600' : '400';
+            tab.style.color = active ? '#24332A' : '#68746D';
+        });
+
+        if (view === 'list') {
+            renderMonthList();
+        }
+
+        if (view === 'history') {
+            renderHistory();
+        }
+    }
+
+    viewTabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            setView(tab.dataset.viewTab);
+        });
+    });
+
+    if (listTodayButton) {
+        listTodayButton.addEventListener('click', function () {
+            currentMonth = today.getMonth();
+            currentYear = today.getFullYear();
+            selectedDate = formatDateKey(today);
+
+            renderCalendar();
+            renderActivities();
+            renderMonthList();
+        });
+    }
+
+    if (listPreviousButton) {
+        listPreviousButton.addEventListener('click', function () {
+            goToMonth(-1);
+        });
+    }
+
+    if (listNextButton) {
+        listNextButton.addEventListener('click', function () {
+            goToMonth(1);
+        });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Export PDF (popup)
+    |--------------------------------------------------------------------------
+    */
+
+    function updateExportSections() {
+        if (!exportForm) {
+            return;
+        }
+
+        const checked = exportForm.querySelector(
+            'input[name="filter_type"]:checked'
+        );
+
+        const type = checked ? checked.value : 'month';
+
+        if (exportMonthSection) {
+            exportMonthSection.classList.toggle('hidden', type !== 'month');
+        }
+
+        if (exportRangeSection) {
+            exportRangeSection.classList.toggle('hidden', type !== 'range');
+        }
+
+        // Tandai kartu pilihan yang aktif
+        exportForm
+            .querySelectorAll('[data-export-option]')
+            .forEach(function (label) {
+                const input = label.querySelector('input[type="radio"]');
+                const active = input && input.checked;
+
+                label.style.borderColor = active ? '#234936' : '';
+                label.style.backgroundColor = active ? '#F1F6F2' : '';
+            });
+    }
+
+    function showExportError(message) {
+        if (!exportError) {
+            return;
+        }
+
+        exportError.textContent = message;
+        exportError.classList.remove('hidden');
+    }
+
+    function clearExportError() {
+        if (!exportError) {
+            return;
+        }
+
+        exportError.textContent = '';
+        exportError.classList.add('hidden');
+    }
+
+    function openExportModal() {
+        if (!exportModal) {
+            return;
+        }
+
+        closeAllModals();
+        clearExportError();
+        updateExportSections();
+        openModal(exportModal);
+    }
+
+    // Pilih bulan: dua dropdown (bulan + tahun) disatukan ke input hidden "YYYY-MM"
+    const exportMonthSelect = document.getElementById('export-month-select');
+    const exportYearSelect = document.getElementById('export-year-select');
+    const exportMonthInput = document.getElementById('export-month');
+
+    function syncExportMonth() {
+        if (!exportMonthSelect || !exportYearSelect || !exportMonthInput) {
+            return;
+        }
+
+        exportMonthInput.value =
+            `${exportYearSelect.value}-${exportMonthSelect.value}`;
+    }
+
+    if (exportMonthSelect) {
+        exportMonthSelect.addEventListener('change', syncExportMonth);
+    }
+
+    if (exportYearSelect) {
+        exportYearSelect.addEventListener('change', syncExportMonth);
+    }
+
+    if (openExportButton) {
+        openExportButton.addEventListener('click', openExportModal);
+    }
+
+    if (exportForm) {
+        exportForm
+            .querySelectorAll('input[name="filter_type"]')
+            .forEach(function (radio) {
+                radio.addEventListener('change', function () {
+                    clearExportError();
+                    updateExportSections();
+                });
+            });
+
+        exportForm.addEventListener('submit', function (event) {
+            clearExportError();
+
+            const checked = exportForm.querySelector(
+                'input[name="filter_type"]:checked'
+            );
+
+            const type = checked ? checked.value : 'month';
+
+            if (type === 'month') {
+                const month = document.getElementById('export-month');
+
+                if (!month || !month.value) {
+                    event.preventDefault();
+                    showExportError('Bulan wajib dipilih.');
+                    return;
+                }
+            } else {
+                const start = document.getElementById('export-start-date');
+                const end = document.getElementById('export-end-date');
+
+                if (!start || !end || !start.value || !end.value) {
+                    event.preventDefault();
+                    showExportError('Tanggal mulai dan tanggal selesai wajib diisi.');
+                    return;
+                }
+
+                if (end.value < start.value) {
+                    event.preventDefault();
+                    showExportError('Tanggal selesai harus sama atau setelah tanggal mulai.');
+                    return;
+                }
+            }
+
+            // File PDF diunduh tanpa pindah halaman, jadi tutup popup setelahnya.
+            setTimeout(function () {
+                closeModal(exportModal);
+            }, 400);
+        });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pilih Semua PIC
+    |--------------------------------------------------------------------------
+    */
+
+    const picSelectors = {
+        create: '[data-create-pic]',
+        edit: '[data-edit-pic]'
+    };
+
+    function refreshSelectAllButtons() {
+        document
+            .querySelectorAll('[data-select-all]')
+            .forEach(function (button) {
+                const selector = picSelectors[button.dataset.selectAll];
+
+                if (!selector) {
+                    return;
+                }
+
+                const boxes = Array.from(document.querySelectorAll(selector));
+                const allChecked =
+                    boxes.length > 0 &&
+                    boxes.every(function (box) {
+                        return box.checked;
+                    });
+
+                button.textContent = allChecked
+                    ? 'Batal pilih semua'
+                    : 'Pilih semua';
+            });
+    }
+
+    document
+        .querySelectorAll('[data-select-all]')
+        .forEach(function (button) {
+            const selector = picSelectors[button.dataset.selectAll];
+
+            if (!selector) {
+                return;
+            }
+
+            button.addEventListener('click', function () {
+                const boxes = Array.from(document.querySelectorAll(selector));
+                const allChecked =
+                    boxes.length > 0 &&
+                    boxes.every(function (box) {
+                        return box.checked;
+                    });
+
+                boxes.forEach(function (box) {
+                    box.checked = !allChecked;
+                });
+
+                refreshSelectAllButtons();
+            });
+        });
+
+    // Centang manual juga memperbarui label tombol
+    Object.keys(picSelectors).forEach(function (key) {
+        document
+            .querySelectorAll(picSelectors[key])
+            .forEach(function (box) {
+                box.addEventListener('change', refreshSelectAllButtons);
+            });
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -714,6 +1418,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         renderCalendar();
         renderActivities();
+        renderMonthList();
     }
 
     if (previousMonthButton) {
@@ -806,6 +1511,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const modalState = window.activityModalState || {};
 
+    if (modalState.openModal === 'export') {
+        openExportModal();
+    }
+
     if (modalState.hasOldInput && modalState.openModal === 'create') {
         openCreateModal();
         updateCreateEndTimeState();
@@ -878,7 +1587,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     updateCreateEndTimeState();
     updateEditEndTimeState();
+    refreshSelectAllButtons();
 
     renderCalendar();
     renderActivities();
+    setView('calendar');
 });
