@@ -3,17 +3,17 @@
     pageTitle="To-Do"
 >
 
-    <div class="space-y-6">
+    <div class="space-y-7">
 
         {{-- Header --}}
-        <div class="flex items-center justify-between gap-4">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
             <div>
-                <h2 class="text-xl font-semibold text-[#24332a]">
+                <h2 class="text-2xl font-semibold tracking-tight text-[#24332a]">
                     Daftar To-Do
                 </h2>
 
-                <p class="mt-1 text-sm text-[#6b7280]">
+                <p class="mt-1.5 text-sm leading-6 text-[#6b7280]">
                     Kelola dan pantau tugas kerja Humas.
                 </p>
             </div>
@@ -22,14 +22,7 @@
 
                 <a
                     href="{{ route('tasks.create') }}"
-                    class="shrink-0
-                           rounded-md
-                           bg-[#234936]
-                           px-5 py-3
-                           text-sm font-medium
-                           text-white
-                           transition
-                           hover:bg-[#315a45]"
+                    class="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#234936] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#315a45] focus:outline-none focus:ring-2 focus:ring-[#8ca795] focus:ring-offset-2"
                 >
                     Tambah To-Do
                 </a>
@@ -41,16 +34,11 @@
 
         {{-- Filter --}}
         <div
-            class="rounded-md
-                   border border-[#e2e7e2]
-                   bg-white
-                   px-5 py-4"
+            class="rounded-xl border border-[#e0e6e1] bg-white p-4 shadow-[0_1px_3px_rgba(36,51,42,0.04)] sm:p-5"
         >
 
             <div
-                class="grid grid-cols-1
-                       gap-4
-                       md:grid-cols-3"
+                class="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5"
             >
 
                 {{-- Search --}}
@@ -58,9 +46,7 @@
 
                     <label
                         for="taskSearch"
-                        class="mb-2 block
-                               text-sm font-medium
-                               text-[#37443b]"
+                        class="mb-2 block text-sm font-semibold text-[#37443b]"
                     >
                         Cari To-Do
                     </label>
@@ -69,17 +55,7 @@
                         type="text"
                         id="taskSearch"
                         placeholder="Cari judul tugas..."
-                        class="w-full
-                               rounded-md
-                               border border-[#d9dfda]
-                               bg-white
-                               px-3 py-2.5
-                               text-sm
-                               text-[#24332a]
-                               outline-none
-                               focus:border-[#557963]
-                               focus:ring-1
-                               focus:ring-[#557963]"
+                        class="h-11 w-full rounded-lg border border-[#d9dfda] bg-white px-3.5 text-sm text-[#24332a] outline-none transition placeholder:text-[#9aa49d] focus:border-[#557963] focus:ring-2 focus:ring-[#557963]/15"
                     >
 
                 </div>
@@ -90,26 +66,14 @@
 
                     <label
                         for="priorityFilter"
-                        class="mb-2 block
-                               text-sm font-medium
-                               text-[#37443b]"
+                        class="mb-2 block text-sm font-semibold text-[#37443b]"
                     >
                         Prioritas
                     </label>
 
                     <select
                         id="priorityFilter"
-                        class="w-full
-                               rounded-md
-                               border border-[#d9dfda]
-                               bg-white
-                               px-3 py-2.5
-                               text-sm
-                               text-[#24332a]
-                               outline-none
-                               focus:border-[#557963]
-                               focus:ring-1
-                               focus:ring-[#557963]"
+                        class="h-11 w-full rounded-lg border border-[#d9dfda] bg-white px-3.5 text-sm text-[#24332a] outline-none transition placeholder:text-[#9aa49d] focus:border-[#557963] focus:ring-2 focus:ring-[#557963]/15"
                     >
 
                         <option value="">
@@ -138,26 +102,14 @@
 
                     <label
                         for="statusFilter"
-                        class="mb-2 block
-                               text-sm font-medium
-                               text-[#37443b]"
+                        class="mb-2 block text-sm font-semibold text-[#37443b]"
                     >
                         Status
                     </label>
 
                     <select
                         id="statusFilter"
-                        class="w-full
-                               rounded-md
-                               border border-[#d9dfda]
-                               bg-white
-                               px-3 py-2.5
-                               text-sm
-                               text-[#24332a]
-                               outline-none
-                               focus:border-[#557963]
-                               focus:ring-1
-                               focus:ring-[#557963]"
+                        class="h-11 w-full rounded-lg border border-[#d9dfda] bg-white px-3.5 text-sm text-[#24332a] outline-none transition placeholder:text-[#9aa49d] focus:border-[#557963] focus:ring-2 focus:ring-[#557963]/15"
                     >
 
                         <option value="">
@@ -188,7 +140,7 @@
         {{-- Daftar To-Do --}}
         <div
             id="taskList"
-            class="space-y-3"
+            class="space-y-4"
         >
 
             @forelse($tasks as $task)
@@ -227,23 +179,13 @@
 
 
                 <div
-                    class="task-item
-                           rounded-md
-                           border border-[#e2e7e2]
-                           bg-white
-                           px-5 py-5"
+                    class="task-item group rounded-xl border border-[#e0e6e1] bg-white p-5 shadow-[0_1px_3px_rgba(36,51,42,0.035)] transition duration-150 hover:border-[#cbd8ce] hover:shadow-[0_5px_18px_rgba(36,51,42,0.06)] sm:p-6"
                     data-title="{{ strtolower($task->title) }}"
                     data-priority="{{ $task->priority }}"
                     data-status="{{ $currentStatus }}"
                 >
 
-                    <div
-                        class="flex flex-col
-                               gap-5
-                               lg:flex-row
-                               lg:items-start
-                               lg:justify-between"
-                    >
+                    <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
 
                         {{-- Informasi utama --}}
                         <div class="min-w-0 flex-1">
@@ -252,9 +194,7 @@
                             <div class="flex items-center gap-3">
 
                                 <h3
-                                    class="text-base
-                                           font-semibold
-                                           text-[#24332a]"
+                                    class="text-base font-semibold leading-6 text-[#24332a] sm:text-[17px]"
                                 >
                                     {{ $task->title }}
                                 </h3>
@@ -290,10 +230,7 @@
                             @if($task->description)
 
                                 <p
-                                    class="mt-2
-                                           text-sm
-                                           leading-6
-                                           text-[#6b7280]"
+                                    class="mt-2 max-w-3xl text-sm leading-6 text-[#68746d]"
                                 >
                                     {{ $task->description }}
                                 </p>
@@ -303,13 +240,7 @@
 
                             {{-- Metadata --}}
                             <div
-                                class="mt-4
-                                       flex flex-wrap
-                                       items-center
-                                       gap-x-5
-                                       gap-y-2
-                                       text-xs
-                                       text-[#6b7280]"
+                                class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[#edf0ed] pt-3 text-xs text-[#6b7280]"
                             >
 
                                 <span>
@@ -324,104 +255,22 @@
                                 </span>
 
 
-                                <span>
-                                    Dibuat oleh:
-
-                                    <strong
-                                        class="font-medium
-                                               text-[#37443b]"
-                                    >
-                                        {{ $task->creator->name }}
-                                    </strong>
-                                </span>
 
                             </div>
 
 
-                            {{-- Penerima untuk Kabag --}}
-                            @if(auth()->user()->role === 'kabag')
 
-                                <div class="mt-5">
-
-                                    <div
-                                        class="mb-2
-                                               text-xs
-                                               font-medium
-                                               text-[#6b7280]"
-                                    >
-                                        Penerima
-                                    </div>
-
-
-                                    <div class="space-y-2">
-
-                                        @foreach($task->assignees as $assignee)
-
-                                            <div
-                                                class="flex
-                                                       max-w-xl
-                                                       items-center
-                                                       justify-between
-                                                       gap-4
-                                                       border-b
-                                                       border-[#edf0ed]
-                                                       pb-2
-                                                       last:border-0
-                                                       last:pb-0"
-                                            >
-
-                                                <span
-                                                    class="text-sm
-                                                           text-[#37443b]"
-                                                >
-                                                    {{ $assignee->name }}
-                                                </span>
-
-
-                                                <span
-                                                    class="text-xs
-                                                           text-[#6b7280]"
-                                                >
-                                                    {{
-                                                        $statusLabels[
-                                                            $assignee->pivot->status
-                                                        ] ?? '-'
-                                                    }}
-                                                </span>
-
-                                            </div>
-
-                                        @endforeach
-
-                                    </div>
-
-                                </div>
-
-                            @endif
 
                         </div>
 
 
                         {{-- Bagian kanan --}}
-                        <div
-                            class="flex
-                                   shrink-0
-                                   flex-col
-                                   items-start
-                                   gap-3
-                                   lg:items-end"
+                        <div class="flex shrink-0 flex-col items-start gap-3 border-t border-[#edf0ed] pt-4 sm:flex-row sm:flex-wrap sm:items-center lg:flex-col lg:items-end lg:border-0 lg:pt-0"
                         >
 
                             {{-- Prioritas --}}
                             <span
-                                class="inline-flex
-                                       items-center
-                                       rounded-md
-                                       border
-                                       px-3 py-1.5
-                                       text-xs
-                                       font-medium
-                                       {{ $priorityClass }}"
+                                class="inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold {{ $priorityClass }}"
                             >
                                 Prioritas:
                                 {{ $priorityLabels[$task->priority] }}
@@ -446,10 +295,7 @@
 
                                     <label
                                         for="status-{{ $task->id }}"
-                                        class="mb-1.5 block
-                                               text-xs
-                                               font-medium
-                                               text-[#6b7280]"
+                                        class="mb-1.5 block text-xs font-semibold text-[#68746d]"
                                     >
                                         Status Saya
                                     </label>
@@ -459,17 +305,7 @@
                                         id="status-{{ $task->id }}"
                                         name="status"
                                         onchange="this.form.submit()"
-                                        class="min-w-[190px]
-                                               rounded-md
-                                               border border-[#d9dfda]
-                                               bg-white
-                                               px-3 py-2
-                                               text-sm
-                                               text-[#24332a]
-                                               outline-none
-                                               focus:border-[#557963]
-                                               focus:ring-1
-                                               focus:ring-[#557963]"
+                                        class="h-10 min-w-[190px] rounded-lg border border-[#d9dfda] bg-white px-3 text-sm text-[#24332a] outline-none transition focus:border-[#557963] focus:ring-2 focus:ring-[#557963]/15"
                                     >
 
                                         <option
@@ -504,23 +340,13 @@
                             @if(auth()->user()->role === 'kabag')
 
                                 <div
-                                    class="flex
-                                           items-center
-                                           gap-2"
+                                    class="flex items-center gap-2"
                                 >
 
                                     {{-- Edit --}}
                                     <a
                                         href="{{ route('tasks.edit', $task) }}"
-                                        class="rounded-md
-                                               border border-[#d9dfda]
-                                               bg-white
-                                               px-3 py-2
-                                               text-xs
-                                               font-medium
-                                               text-[#37443b]
-                                               transition
-                                               hover:bg-[#f7f8f6]"
+                                        class="inline-flex h-9 items-center justify-center rounded-lg border border-[#d9dfda] bg-white px-3.5 text-xs font-semibold text-[#37443b] transition hover:border-[#b9c9bd] hover:bg-[#f5f8f5] focus:outline-none focus:ring-2 focus:ring-[#557963]/20"
                                     >
                                         Edit
                                     </a>
@@ -539,15 +365,7 @@
 
                                         <button
                                             type="submit"
-                                            class="rounded-md
-                                                   border border-[#efd6d6]
-                                                   bg-white
-                                                   px-3 py-2
-                                                   text-xs
-                                                   font-medium
-                                                   text-[#9b4040]
-                                                   transition
-                                                   hover:bg-[#faf0f0]"
+                                            class="inline-flex h-9 items-center justify-center rounded-lg border border-[#efd6d6] bg-white px-3.5 text-xs font-semibold text-[#9b4040] transition hover:border-[#e6bcbc] hover:bg-[#fcf3f3] focus:outline-none focus:ring-2 focus:ring-[#b85a5a]/15"
                                         >
                                             Hapus
                                         </button>
@@ -562,17 +380,49 @@
 
                     </div>
 
+                    {{-- Penerima untuk Kabag: panel selebar kartu tugas --}}
+                    @if(auth()->user()->role === 'kabag')
+
+                        <div class="mt-5 w-full rounded-lg border border-[#e7ece8] bg-[#f5f8f5] px-4 py-4 sm:px-5">
+
+                            <div class="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-[#68746d]">
+                                Penerima
+                            </div>
+
+                            <div class="space-y-2">
+                                @foreach($task->assignees as $assignee)
+                                    @php
+                                        $assigneeStatus = $assignee->pivot->status;
+                                        $assigneeStatusClass = match ($assigneeStatus) {
+                                            'selesai' => 'border-[#d5e5d8] bg-[#edf5ef] text-[#315c40]',
+                                            'sedang_dikerjakan' => 'border-[#d9e4f2] bg-[#f0f5fb] text-[#365b86]',
+                                            default => 'border-[#e2e7e2] bg-white text-[#68746d]',
+                                        };
+                                    @endphp
+
+                                    <div class="flex flex-col gap-2 border-b border-[#e2e9e3] py-2 first:pt-0 last:border-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
+                                        <span class="text-sm font-medium text-[#37443b]">
+                                            {{ $assignee->name }}
+                                        </span>
+
+                                        <span class="inline-flex w-fit items-center rounded-md border px-3 py-1.5 text-xs font-medium {{ $assigneeStatusClass }}">
+                                            {{ $statusLabels[$assigneeStatus] ?? '-' }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                        </div>
+
+                    @endif
+
                 </div>
 
             @empty
 
                 {{-- Tidak ada data --}}
                 <div
-                    class="rounded-md
-                           border border-[#e2e7e2]
-                           bg-white
-                           px-6 py-12
-                           text-center"
+                    class="rounded-xl border border-dashed border-[#d8e1da] bg-white px-6 py-14 text-center"
                 >
 
                     <p
