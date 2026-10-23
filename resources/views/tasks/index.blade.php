@@ -3,7 +3,37 @@
     pageTitle="To-Do"
 >
 
-    <div class="space-y-7">
+    @php
+        $isKabag = auth()->user()->role === 'kabag';
+
+        // Modal mana yang harus dibuka lagi setelah validasi gagal
+        $openModal = session('open_modal', old('_modal'));
+        $editId = session('edit_id', old('_task_id'));
+
+        if ($isKabag) {
+            // Daftar penerima. Kalau controller sudah mengirim $users, itu yang dipakai.
+            $users = $users ?? \App\Models\User::where('is_active', true)
+                ->whereIn('role', ['staff', 'intern'])
+                ->orderBy('name')
+                ->get();
+
+            // Data untuk mengisi popup Edit
+            $taskData = $tasks->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'title' => $item->title,
+                    'description' => $item->description,
+                    'priority' => $item->priority,
+                    'due_date' => $item->due_date->format('Y-m-d'),
+                    'assignee_ids' => $item->assignees->pluck('id')->values()->all(),
+                ];
+            })->values();
+        }
+
+        $fieldClass = 'mt-2 block w-full rounded-lg border border-[#E5E9F0] bg-white px-3 py-2.5 text-sm text-[#24332A] outline-none transition placeholder:text-[#9aa49d] focus:border-[#234936] focus:ring-1 focus:ring-[#234936]';
+    @endphp
+
+    <div id="todo-page" class="space-y-7" data-page-anchor>
 
         {{-- Header --}}
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -18,14 +48,15 @@
                 </p>
             </div>
 
-            @if(auth()->user()->role === 'kabag')
+            @if($isKabag)
 
-                <a
-                    href="{{ route('tasks.create') }}"
+                <button
+                    type="button"
+                    id="open-create-task"
                     class="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#234936] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#315a45] focus:outline-none focus:ring-2 focus:ring-[#8ca795] focus:ring-offset-2"
                 >
                     Tambah To-Do
-                </a>
+                </button>
 
             @endif
 
@@ -254,12 +285,7 @@
                                     </strong>
                                 </span>
 
-
-
                             </div>
-
-
-
 
                         </div>
 
@@ -337,26 +363,30 @@
 
 
                             {{-- Tombol Edit + Hapus --}}
-                            @if(auth()->user()->role === 'kabag')
+                            @if($isKabag)
 
                                 <div
                                     class="flex items-center gap-2"
                                 >
 
-                                    {{-- Edit --}}
-                                    <a
-                                        href="{{ route('tasks.edit', $task) }}"
+                                    {{-- Edit (membuka popup) --}}
+                                    <button
+                                        type="button"
+                                        data-edit-task="{{ $task->id }}"
                                         class="inline-flex h-9 items-center justify-center rounded-lg border border-[#d9dfda] bg-white px-3.5 text-xs font-semibold text-[#37443b] transition hover:border-[#b9c9bd] hover:bg-[#f5f8f5] focus:outline-none focus:ring-2 focus:ring-[#557963]/20"
                                     >
                                         Edit
-                                    </a>
+                                    </button>
 
 
                                     {{-- Hapus --}}
                                     <form
                                         method="POST"
                                         action="{{ route('tasks.destroy', $task) }}"
-                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus To-Do ini?');"
+                                        data-confirm-title="Hapus To-Do?"
+                                        data-confirm-message="To-Do “{{ $task->title }}” akan dihapus dan tidak dapat dikembalikan."
+                                        data-confirm-button="Hapus"
+                                        data-confirm-tone="danger"
                                     >
 
                                         @csrf
@@ -381,7 +411,7 @@
                     </div>
 
                     {{-- Penerima untuk Kabag: panel selebar kartu tugas --}}
-                    @if(auth()->user()->role === 'kabag')
+                    @if($isKabag)
 
                         <div class="mt-5 w-full rounded-lg border border-[#e7ece8] bg-[#f5f8f5] px-4 py-4 sm:px-5">
 
@@ -478,6 +508,598 @@
         </div>
 
     </div>
+
+
+    {{-- ========================================================= --}}
+    {{-- POPUP TAMBAH / EDIT TO-DO (hanya Kabag) --}}
+    {{-- ========================================================= --}}
+
+    @if($isKabag)
+
+        @foreach(['create', 'edit'] as $mode)
+
+            @php
+                $isEdit = $mode === 'edit';
+
+                // Popup Tambah menampilkan kembali input lama setelah validasi gagal.
+                // Popup Edit diisi ulang lewat JavaScript.
+                $restore = !$isEdit && $openModal === 'create';
+            @endphp
+
+            <div
+                id="{{ $mode }}-task-modal"
+                class="fixed inset-0 z-50 hidden overflow-y-auto"
+                aria-hidden="true"
+            >
+
+                <div
+                    class="flex min-h-full items-center justify-center bg-black/40 px-4 py-8"
+                    data-modal-backdrop="{{ $mode }}"
+                >
+
+                    <div
+                        class="w-full max-w-2xl rounded-2xl border border-[#E5E9F0] bg-white shadow-xl"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="{{ $mode }}-task-title"
+                    >
+
+                        {{-- Header popup --}}
+                        <div class="flex items-center justify-between border-b border-[#E5E9F0] px-6 py-4">
+
+                            <div>
+                                <h2
+                                    id="{{ $mode }}-task-title"
+                                    class="text-lg font-semibold text-[#24332A]"
+                                >
+                                    {{ $isEdit ? 'Edit To-Do' : 'Tambah To-Do' }}
+                                </h2>
+
+                                <p class="mt-1 text-sm text-[#68746D]">
+                                    {{ $isEdit
+                                        ? 'Perbarui informasi dan penerima tugas.'
+                                        : 'Buat tugas baru dan tentukan penerima tugas.' }}
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                data-close-modal="{{ $mode }}"
+                                class="text-sm font-medium text-[#68746D] transition hover:text-[#24332A]"
+                            >
+                                Tutup
+                            </button>
+
+                        </div>
+
+
+                        <form
+                            id="{{ $mode }}-task-form"
+                            method="POST"
+                            action="{{ $isEdit
+                                ? route('tasks.update', ['task' => '__ID__'])
+                                : route('tasks.store') }}"
+                            @if($isEdit)
+                                data-action-template="{{ route('tasks.update', ['task' => '__ID__']) }}"
+                            @endif
+                        >
+
+                            @csrf
+
+                            @if($isEdit)
+                                @method('PUT')
+                                <input type="hidden" name="_task_id" id="edit-task-id" value="">
+                            @endif
+
+                            <input type="hidden" name="_modal" value="{{ $mode }}">
+
+
+                            <div class="max-h-[70vh] overflow-y-auto px-6 py-6">
+
+                                {{-- Error validasi --}}
+                                @if($errors->any() && $openModal === $mode)
+
+                                    <div class="mb-5 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
+
+                                        <p class="font-medium">Periksa kembali data yang dimasukkan.</p>
+
+                                        <ul class="mt-2 list-disc space-y-1 pl-5">
+                                            @foreach($errors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+
+                                    </div>
+
+                                @endif
+
+
+                                {{-- Judul --}}
+                                <div>
+                                    <label for="{{ $mode }}-title" class="block text-sm font-medium text-[#24332A]">
+                                        Judul To-Do
+                                    </label>
+
+                                    <input
+                                        id="{{ $mode }}-title"
+                                        type="text"
+                                        name="title"
+                                        value="{{ $restore ? old('title') : '' }}"
+                                        maxlength="255"
+                                        required
+                                        class="{{ $fieldClass }}"
+                                        placeholder="Contoh: Buat narasi kegiatan wisuda"
+                                    >
+                                </div>
+
+
+                                {{-- Deskripsi --}}
+                                <div class="mt-5">
+                                    <label for="{{ $mode }}-description" class="block text-sm font-medium text-[#24332A]">
+                                        Deskripsi
+                                    </label>
+
+                                    <textarea
+                                        id="{{ $mode }}-description"
+                                        name="description"
+                                        rows="4"
+                                        class="{{ $fieldClass }} resize-none"
+                                        placeholder="Jelaskan pekerjaan yang perlu dilakukan..."
+                                    >{{ $restore ? old('description') : '' }}</textarea>
+                                </div>
+
+
+                                {{-- Prioritas + Deadline --}}
+                                <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+                                    <div>
+                                        <label for="{{ $mode }}-priority" class="block text-sm font-medium text-[#24332A]">
+                                            Prioritas
+                                        </label>
+
+                                        <select
+                                            id="{{ $mode }}-priority"
+                                            name="priority"
+                                            required
+                                            class="{{ $fieldClass }}"
+                                        >
+                                            <option value="" disabled {{ $restore && old('priority') ? '' : 'selected' }}>
+                                                Pilih prioritas
+                                            </option>
+
+                                            @foreach(['rendah' => 'Rendah', 'sedang' => 'Sedang', 'tinggi' => 'Tinggi'] as $value => $label)
+                                                <option
+                                                    value="{{ $value }}"
+                                                    {{ $restore && old('priority') === $value ? 'selected' : '' }}
+                                                >
+                                                    {{ $label }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label for="{{ $mode }}-due-date" class="block text-sm font-medium text-[#24332A]">
+                                            Deadline
+                                        </label>
+
+                                        <input
+                                            id="{{ $mode }}-due-date"
+                                            type="date"
+                                            name="due_date"
+                                            value="{{ $restore ? old('due_date') : '' }}"
+                                            required
+                                            class="{{ $fieldClass }}"
+                                        >
+                                    </div>
+
+                                </div>
+
+
+                                {{-- Penerima --}}
+                                <div class="mt-5">
+
+                                    <div class="flex items-start justify-between gap-3">
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-[#24332A]">
+                                                Ditugaskan kepada
+                                            </label>
+
+                                            <p class="mt-1 text-xs text-[#68746D]">
+                                                Pilih satu atau beberapa Staff/Intern.
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            data-select-all="{{ $mode }}"
+                                            class="shrink-0 rounded-lg border border-[#E5E9F0] bg-white px-3 py-1.5 text-sm font-medium text-[#24332A] shadow-sm transition hover:bg-[#F1F5F9]"
+                                        >
+                                            Pilih semua
+                                        </button>
+
+                                    </div>
+
+                                    <div class="mt-3 max-h-52 overflow-y-auto rounded-lg border border-[#E5E9F0]">
+
+                                        @forelse($users as $user)
+
+                                            <label class="flex cursor-pointer items-center gap-3 border-b border-[#EEF2F6] px-3 py-2.5 last:border-b-0 hover:bg-[#F7F9F7]">
+
+                                                <input
+                                                    type="checkbox"
+                                                    name="assignee_ids[]"
+                                                    value="{{ $user->id }}"
+                                                    data-assignee="{{ $mode }}"
+                                                    {{ $restore && in_array($user->id, old('assignee_ids', [])) ? 'checked' : '' }}
+                                                    class="h-4 w-4 rounded border-[#CBD5E1] text-[#234936] focus:ring-[#234936]"
+                                                >
+
+                                                <div>
+                                                    <p class="text-sm font-medium text-[#24332A]">
+                                                        {{ $user->name }}
+                                                    </p>
+
+                                                    <p class="text-xs text-[#68746D]">
+                                                        {{ ucfirst($user->role) }}@if(!empty($user->username)) · {{ $user->username }}@endif
+                                                    </p>
+                                                </div>
+
+                                            </label>
+
+                                        @empty
+
+                                            <p class="px-3 py-4 text-sm text-[#B91C1C]">
+                                                Tidak ada Staff atau Intern aktif yang dapat menerima tugas.
+                                            </p>
+
+                                        @endforelse
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            {{-- Footer popup --}}
+                            <div class="flex items-center justify-end gap-3 border-t border-[#E5E9F0] px-6 py-4">
+
+                                <button
+                                    type="button"
+                                    data-close-modal="{{ $mode }}"
+                                    class="rounded-lg border border-[#E5E9F0] bg-white px-4 py-2.5 text-sm font-medium text-[#24332A] transition hover:bg-[#F1F5F9]"
+                                >
+                                    Batal
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    class="rounded-lg bg-[#234936] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#315A45]"
+                                >
+                                    {{ $isEdit ? 'Simpan Perubahan' : 'Simpan To-Do' }}
+                                </button>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        @endforeach
+
+
+        {{-- Data untuk JavaScript --}}
+        <script id="task-data" type="application/json">
+            @json($taskData)
+        </script>
+
+        <script>
+            window.taskModalState = {
+                openModal: @json($openModal),
+                editId: @json($editId),
+
+                old: {
+                    title: @json(old('title')),
+                    description: @json(old('description')),
+                    priority: @json(old('priority')),
+                    due_date: @json(old('due_date')),
+                    assignee_ids: @json(old('assignee_ids', []))
+                }
+            };
+        </script>
+
+    @endif
+
+
+    {{-- Script popup Tambah / Edit --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const createModal = document.getElementById('create-task-modal');
+            const editModal = document.getElementById('edit-task-modal');
+
+            // Staff / Intern tidak punya popup
+            if (!createModal || !editModal) {
+                return;
+            }
+
+            const dataEl = document.getElementById('task-data');
+            const tasks = dataEl ? JSON.parse(dataEl.textContent || '[]') : [];
+
+            const modalState = window.taskModalState || {};
+
+            function getModal(name) {
+                return name === 'create' ? createModal : name === 'edit' ? editModal : null;
+            }
+
+            /* ----------------------------------------------------- */
+            /* Buka / tutup popup                                     */
+            /* ----------------------------------------------------- */
+
+            /* ----------------------------------------------------- */
+            /* Posisikan popup di tengah area konten (tanpa sidebar)  */
+            /* ----------------------------------------------------- */
+
+            const pageEl = document.getElementById('todo-page');
+
+            function centerModal(modal) {
+                const box = modal.querySelector('[data-modal-backdrop]');
+
+                if (!box || !pageEl) {
+                    return;
+                }
+
+                // Titik tengah area konten, diukur dari tepi kiri layar
+                const rect = pageEl.getBoundingClientRect();
+                const contentCenter = rect.left + rect.width / 2;
+
+                // Lebar layar yang tersedia untuk popup
+                const width = modal.clientWidth;
+
+                // Geser popup ke kanan (padding kiri) supaya tepat di titik tengah konten.
+                // 16 = padding bawaan (px-4).
+                box.style.paddingLeft =
+                    Math.max(16, 2 * contentCenter - width + 16) + 'px';
+            }
+
+            window.addEventListener('resize', function () {
+                [createModal, editModal].forEach(function (modal) {
+                    if (!modal.classList.contains('hidden')) {
+                        centerModal(modal);
+                    }
+                });
+            });
+
+            function openModal(modal) {
+                modal.classList.remove('hidden');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('overflow-hidden');
+
+                // Ukur setelah scrollbar halaman hilang (overflow-hidden)
+                centerModal(modal);
+
+                refreshSelectAll();
+            }
+
+            function closeModal(modal) {
+                modal.classList.add('hidden');
+                modal.setAttribute('aria-hidden', 'true');
+
+                const anyOpen = [createModal, editModal].some(function (item) {
+                    return !item.classList.contains('hidden');
+                });
+
+                if (!anyOpen) {
+                    document.body.classList.remove('overflow-hidden');
+                }
+            }
+
+            function closeAll() {
+                [createModal, editModal].forEach(function (modal) {
+                    modal.classList.add('hidden');
+                    modal.setAttribute('aria-hidden', 'true');
+                });
+
+                document.body.classList.remove('overflow-hidden');
+            }
+
+            /* ----------------------------------------------------- */
+            /* Popup Tambah                                           */
+            /* ----------------------------------------------------- */
+
+            function openCreate() {
+                closeAll();
+                openModal(createModal);
+
+                const title = document.getElementById('create-title');
+
+                if (title) {
+                    title.focus();
+                }
+            }
+
+            const openCreateButton = document.getElementById('open-create-task');
+
+            if (openCreateButton) {
+                openCreateButton.addEventListener('click', openCreate);
+            }
+
+            /* ----------------------------------------------------- */
+            /* Popup Edit                                             */
+            /* ----------------------------------------------------- */
+
+            function setAssignees(mode, ids) {
+                const selected = (ids || []).map(String);
+
+                document
+                    .querySelectorAll('[data-assignee="' + mode + '"]')
+                    .forEach(function (box) {
+                        box.checked = selected.includes(String(box.value));
+                    });
+            }
+
+            function openEdit(taskId) {
+                const task = tasks.find(function (item) {
+                    return String(item.id) === String(taskId);
+                });
+
+                if (!task) {
+                    return;
+                }
+
+                closeAll();
+
+                const form = document.getElementById('edit-task-form');
+
+                form.action = form.dataset.actionTemplate.replace('__ID__', task.id);
+
+                document.getElementById('edit-task-id').value = task.id;
+                document.getElementById('edit-title').value = task.title || '';
+                document.getElementById('edit-description').value = task.description || '';
+                document.getElementById('edit-priority').value = task.priority || '';
+                document.getElementById('edit-due-date').value = task.due_date || '';
+
+                setAssignees('edit', task.assignee_ids);
+
+                openModal(editModal);
+
+                document.getElementById('edit-title').focus();
+            }
+
+            document
+                .querySelectorAll('[data-edit-task]')
+                .forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        openEdit(button.dataset.editTask);
+                    });
+                });
+
+            /* ----------------------------------------------------- */
+            /* Pilih semua penerima                                   */
+            /* ----------------------------------------------------- */
+
+            function refreshSelectAll() {
+                document
+                    .querySelectorAll('[data-select-all]')
+                    .forEach(function (button) {
+                        const boxes = Array.from(
+                            document.querySelectorAll(
+                                '[data-assignee="' + button.dataset.selectAll + '"]'
+                            )
+                        );
+
+                        const allChecked = boxes.length > 0 && boxes.every(function (box) {
+                            return box.checked;
+                        });
+
+                        button.textContent = allChecked ? 'Batal pilih semua' : 'Pilih semua';
+                    });
+            }
+
+            document
+                .querySelectorAll('[data-select-all]')
+                .forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        const boxes = Array.from(
+                            document.querySelectorAll(
+                                '[data-assignee="' + button.dataset.selectAll + '"]'
+                            )
+                        );
+
+                        const allChecked = boxes.length > 0 && boxes.every(function (box) {
+                            return box.checked;
+                        });
+
+                        boxes.forEach(function (box) {
+                            box.checked = !allChecked;
+                        });
+
+                        refreshSelectAll();
+                    });
+                });
+
+            document
+                .querySelectorAll('[data-assignee]')
+                .forEach(function (box) {
+                    box.addEventListener('change', refreshSelectAll);
+                });
+
+            /* ----------------------------------------------------- */
+            /* Tutup: tombol, klik area gelap, tombol Esc             */
+            /* ----------------------------------------------------- */
+
+            document
+                .querySelectorAll('[data-close-modal]')
+                .forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        closeModal(getModal(button.dataset.closeModal));
+                    });
+                });
+
+            document
+                .querySelectorAll('[data-modal-backdrop]')
+                .forEach(function (backdrop) {
+                    backdrop.addEventListener('click', function (event) {
+                        if (event.target !== backdrop) {
+                            return;
+                        }
+
+                        closeModal(getModal(backdrop.dataset.modalBackdrop));
+                    });
+                });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closeAll();
+                }
+            });
+
+            /* ----------------------------------------------------- */
+            /* Buka lagi popup setelah validasi gagal                 */
+            /* ----------------------------------------------------- */
+
+            if (modalState.openModal === 'create') {
+                openCreate();
+            }
+
+            if (modalState.openModal === 'edit' && modalState.editId) {
+                openEdit(modalState.editId);
+
+                const old = modalState.old || {};
+                const has = function (value) {
+                    return value !== null && value !== undefined;
+                };
+
+                if (has(old.title)) {
+                    document.getElementById('edit-title').value = old.title;
+                }
+
+                if (has(old.description)) {
+                    document.getElementById('edit-description').value = old.description;
+                }
+
+                if (has(old.priority)) {
+                    document.getElementById('edit-priority').value = old.priority;
+                }
+
+                if (has(old.due_date)) {
+                    document.getElementById('edit-due-date').value = old.due_date;
+                }
+
+                setAssignees('edit', old.assignee_ids);
+                refreshSelectAll();
+            }
+
+            refreshSelectAll();
+
+        });
+    </script>
 
 
     {{-- Filter Script --}}
@@ -588,5 +1210,7 @@
 
         });
     </script>
+
+@include('partials.confirm-dialog')
 
 </x-layouts.app>

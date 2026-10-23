@@ -325,6 +325,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (deleteActivityForm) {
             deleteActivityForm.action = `/kalender-kegiatan/${activity.id}`;
+            deleteActivityForm.dataset.confirmMessage = deleteMessage(activity);
         }
 
         openModal(detailModal);
@@ -411,19 +412,30 @@ document.addEventListener('DOMContentLoaded', function () {
     |--------------------------------------------------------------------------
     */
 
+    function deleteMessage(activity) {
+        return `Kegiatan “${activity.title}” akan dihapus dan tidak dapat dikembalikan.`;
+    }
+
     function deleteActivity(activity) {
         if (!deleteActivityForm || !activity) {
             return;
         }
 
-        if (!confirm('Apakah Anda yakin ingin menghapus kegiatan ini?')) {
-            return;
-        }
+        window.openConfirm({
+            title: 'Hapus kegiatan?',
+            message: deleteMessage(activity),
+            confirmLabel: 'Hapus',
+            tone: 'danger'
+        }).then(function (ok) {
+            if (!ok) {
+                return;
+            }
 
-        deleteActivityForm.action = `/kalender-kegiatan/${activity.id}`;
+            deleteActivityForm.action = `/kalender-kegiatan/${activity.id}`;
 
-        // submit() tidak memicu onsubmit, jadi tidak ada konfirmasi ganda.
-        deleteActivityForm.submit();
+            // submit() tidak memicu event submit, jadi tidak ada konfirmasi ganda.
+            deleteActivityForm.submit();
+        });
     }
 
     /*

@@ -9,7 +9,7 @@
     $checkboxClass = 'h-4 w-4 rounded border-[#CBD5E1] text-[#234936] focus:ring-[#234936]';
 @endphp
 
-<div class="space-y-6">
+<div class="space-y-6" data-page-anchor>
 
     {{-- ========================================================= --}}
     {{-- HEADER --}}
@@ -722,7 +722,10 @@
                         id="delete-activity-form"
                         method="POST"
                         action=""
-                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus kegiatan ini?');"
+                        data-confirm-title="Hapus kegiatan?"
+                        data-confirm-message="Kegiatan ini akan dihapus dan tidak dapat dikembalikan."
+                        data-confirm-button="Hapus"
+                        data-confirm-tone="danger"
                     >
 
                         @csrf
@@ -1247,5 +1250,7 @@
         }
     };
 </script>
+
+@include('partials.confirm-dialog')
 
 @endsection

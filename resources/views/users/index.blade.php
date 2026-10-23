@@ -1,9 +1,30 @@
-
 <x-layouts.app
     title="Pengguna - PRISMA"
     pageTitle="Pengguna"
 >
-    <div class="space-y-6">
+
+    @php
+        // Modal mana yang harus dibuka lagi setelah validasi gagal
+        $openModal = session('open_modal', old('_modal'));
+        $editId = session('edit_id', old('_user_id'));
+
+        // Akun yang tampil di tabel (Kabag tidak ditampilkan)
+        $listedUsers = $users->reject(fn ($item) => $item->role === 'kabag');
+
+        // Data untuk mengisi popup Edit
+        $userData = $listedUsers->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'username' => $item->username,
+                'role' => $item->role,
+            ];
+        })->values();
+
+        $fieldClass = 'mt-2 block w-full rounded-lg border border-[#E5E9F0] bg-white px-3 py-2.5 text-sm text-[#24332a] outline-none transition placeholder:text-[#9ca3af] focus:border-[#234936] focus:ring-1 focus:ring-[#234936]';
+    @endphp
+
+    <div id="users-page" class="space-y-6" data-page-anchor>
 
         {{-- Header --}}
         <div class="flex flex-wrap items-center justify-between gap-4">
@@ -21,8 +42,9 @@
                 </p>
             </div>
 
-            <a
-                href="{{ route('users.create') }}"
+            <button
+                type="button"
+                id="open-create-user"
                 class="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-[#234936] px-5 text-sm font-medium text-white transition hover:bg-[#315a45] focus:outline-none focus:ring-2 focus:ring-[#8eaa96] focus:ring-offset-2"
             >
                 <svg
@@ -37,7 +59,7 @@
                     <path d="M12 5v14M5 12h14"/>
                 </svg>
                 Tambah Pengguna
-            </a>
+            </button>
         </div>
 
         {{-- Daftar pengguna --}}
@@ -72,7 +94,7 @@
 
                     <tbody class="divide-y divide-[#edf0ed]">
 
-                        @forelse($users->reject(fn ($user) => $user->role === 'kabag') as $user)
+                        @forelse($listedUsers as $user)
 
                             @php
                                 $roleLabels = [
@@ -112,7 +134,10 @@
                                         <form
                                             method="POST"
                                             action="{{ route('users.toggle-status', $user) }}"
-                                            onsubmit="return confirm('{{ $user->is_active ? 'Apakah Anda yakin ingin menonaktifkan akun ini?' : 'Apakah Anda yakin ingin mengaktifkan akun ini?' }}');"
+                                            data-confirm-title="{{ $user->is_active ? 'Nonaktifkan akun?' : 'Aktifkan akun?' }}"
+                                            data-confirm-message="{{ $user->is_active ? 'Akun ' . $user->name . ' akan dinonaktifkan dan tidak dapat masuk ke sistem.' : 'Akun ' . $user->name . ' akan diaktifkan kembali dan dapat masuk ke sistem.' }}"
+                                            data-confirm-button="{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}"
+                                            data-confirm-tone="{{ $user->is_active ? 'danger' : 'primary' }}"
                                         >
                                             @csrf
                                             @method('PUT')
@@ -159,11 +184,12 @@
                                     @endif
                                 </td>
 
-                                {{-- Aksi: Edit --}}
+                                {{-- Aksi: Edit (membuka popup) --}}
                                 <td class="px-6 py-5">
                                     <div class="flex justify-end">
-                                        <a
-                                            href="{{ route('users.edit', $user) }}"
+                                        <button
+                                            type="button"
+                                            data-edit-user="{{ $user->id }}"
                                             aria-label="Edit pengguna {{ $user->name }}"
                                             title="Edit pengguna"
                                             class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#dce4dd] bg-white text-[#3c5143] transition hover:border-[#9db6a3] hover:bg-[#f0f5f1] hover:text-[#234936] focus:outline-none focus:ring-2 focus:ring-[#8eaa96] focus:ring-offset-2"
@@ -181,7 +207,7 @@
                                                 <path d="M12 20h9"/>
                                                 <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/>
                                             </svg>
-                                        </a>
+                                        </button>
                                     </div>
                                 </td>
 
@@ -229,4 +255,461 @@
         </div>
 
     </div>
+
+
+    {{-- ========================================================= --}}
+    {{-- POPUP TAMBAH / EDIT PENGGUNA --}}
+    {{-- ========================================================= --}}
+
+    @foreach(['create', 'edit'] as $mode)
+
+        @php
+            $isEdit = $mode === 'edit';
+
+            // Popup Tambah menampilkan kembali input lama setelah validasi gagal.
+            // Popup Edit diisi ulang lewat JavaScript.
+            $restore = !$isEdit && $openModal === 'create';
+        @endphp
+
+        <div
+            id="{{ $mode }}-user-modal"
+            class="fixed inset-0 z-50 hidden overflow-y-auto"
+            aria-hidden="true"
+        >
+
+            <div
+                class="flex min-h-full items-center justify-center bg-black/40 px-4 py-8"
+                data-modal-backdrop="{{ $mode }}"
+            >
+
+                <div
+                    class="w-full max-w-lg rounded-2xl border border-[#E5E9F0] bg-white shadow-xl"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="{{ $mode }}-user-title"
+                >
+
+                    {{-- Header popup --}}
+                    <div class="flex items-center justify-between border-b border-[#E5E9F0] px-6 py-4">
+
+                        <div>
+                            <h2
+                                id="{{ $mode }}-user-title"
+                                class="text-lg font-semibold text-[#24332A]"
+                            >
+                                {{ $isEdit ? 'Edit Pengguna' : 'Tambah Pengguna' }}
+                            </h2>
+
+                            <p class="mt-1 text-sm text-[#68746D]">
+                                {{ $isEdit
+                                    ? 'Perbarui data akun pengguna.'
+                                    : 'Tambahkan akun pengguna baru ke dalam sistem.' }}
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            data-close-modal="{{ $mode }}"
+                            class="text-sm font-medium text-[#68746D] transition hover:text-[#24332A]"
+                        >
+                            Tutup
+                        </button>
+
+                    </div>
+
+
+                    <form
+                        id="{{ $mode }}-user-form"
+                        method="POST"
+                        action="{{ $isEdit
+                            ? route('users.update', ['user' => '__ID__'])
+                            : route('users.store') }}"
+                        @if($isEdit)
+                            data-action-template="{{ route('users.update', ['user' => '__ID__']) }}"
+                        @endif
+                    >
+
+                        @csrf
+
+                        @if($isEdit)
+                            @method('PUT')
+                            <input type="hidden" name="_user_id" id="edit-user-id" value="">
+                        @endif
+
+                        <input type="hidden" name="_modal" value="{{ $mode }}">
+
+
+                        <div class="max-h-[70vh] overflow-y-auto px-6 py-6">
+
+                            {{-- Error validasi --}}
+                            @if($errors->any() && $openModal === $mode)
+
+                                <div class="mb-5 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
+
+                                    <p class="font-medium">Periksa kembali data yang dimasukkan.</p>
+
+                                    <ul class="mt-2 list-disc space-y-1 pl-5">
+                                        @foreach($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+
+                                </div>
+
+                            @endif
+
+
+                            {{-- Nama --}}
+                            <div>
+                                <label for="{{ $mode }}-name" class="block text-sm font-medium text-[#24332A]">
+                                    Nama
+                                </label>
+
+                                <input
+                                    id="{{ $mode }}-name"
+                                    type="text"
+                                    name="name"
+                                    value="{{ $restore ? old('name') : '' }}"
+                                    required
+                                    placeholder="Masukkan nama lengkap"
+                                    class="{{ $fieldClass }}"
+                                >
+                            </div>
+
+
+                            {{-- Username --}}
+                            <div class="mt-5">
+                                <label for="{{ $mode }}-username" class="block text-sm font-medium text-[#24332A]">
+                                    Username
+                                </label>
+
+                                <input
+                                    id="{{ $mode }}-username"
+                                    type="text"
+                                    name="username"
+                                    value="{{ $restore ? old('username') : '' }}"
+                                    required
+                                    autocomplete="off"
+                                    placeholder="Masukkan username"
+                                    class="{{ $fieldClass }}"
+                                >
+                            </div>
+
+
+                            {{-- Password (hanya saat tambah) --}}
+                            @unless($isEdit)
+
+                                <div class="mt-5">
+                                    <label for="create-password" class="block text-sm font-medium text-[#24332A]">
+                                        Password
+                                    </label>
+
+                                    <input
+                                        id="create-password"
+                                        type="password"
+                                        name="password"
+                                        required
+                                        autocomplete="new-password"
+                                        placeholder="Minimal 8 karakter"
+                                        class="{{ $fieldClass }}"
+                                    >
+
+                                    <p class="mt-2 text-xs text-[#68746D]">
+                                        Password minimal 8 karakter.
+                                    </p>
+                                </div>
+
+                            @endunless
+
+
+                            {{-- Role --}}
+                            <div class="mt-5">
+                                <label for="{{ $mode }}-role" class="block text-sm font-medium text-[#24332A]">
+                                    Role
+                                </label>
+
+                                <select
+                                    id="{{ $mode }}-role"
+                                    name="role"
+                                    required
+                                    class="{{ $fieldClass }}"
+                                >
+                                    <option value="" disabled {{ $restore && old('role') ? '' : 'selected' }}>
+                                        Pilih role
+                                    </option>
+
+                                    @foreach(['kabag' => 'Kabag', 'staff' => 'Staff', 'intern' => 'Intern'] as $value => $label)
+                                        <option
+                                            value="{{ $value }}"
+                                            {{ $restore && old('role') === $value ? 'selected' : '' }}
+                                        >
+                                            {{ $label }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                        </div>
+
+
+                        {{-- Footer popup --}}
+                        <div class="flex items-center justify-end gap-3 border-t border-[#E5E9F0] px-6 py-4">
+
+                            <button
+                                type="button"
+                                data-close-modal="{{ $mode }}"
+                                class="rounded-lg border border-[#E5E9F0] bg-white px-4 py-2.5 text-sm font-medium text-[#24332A] transition hover:bg-[#F1F5F9]"
+                            >
+                                Batal
+                            </button>
+
+                            <button
+                                type="submit"
+                                class="rounded-lg bg-[#234936] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#315A45]"
+                            >
+                                {{ $isEdit ? 'Simpan Perubahan' : 'Simpan Pengguna' }}
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    @endforeach
+
+
+    {{-- Data untuk JavaScript --}}
+    <script id="user-data" type="application/json">
+        @json($userData)
+    </script>
+
+    <script>
+        window.userModalState = {
+            openModal: @json($openModal),
+            editId: @json($editId),
+
+            old: {
+                name: @json(old('name')),
+                username: @json(old('username')),
+                role: @json(old('role'))
+            }
+        };
+    </script>
+
+
+    {{-- Script popup Tambah / Edit --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const createModal = document.getElementById('create-user-modal');
+            const editModal = document.getElementById('edit-user-modal');
+
+            if (!createModal || !editModal) {
+                return;
+            }
+
+            const dataEl = document.getElementById('user-data');
+            const users = dataEl ? JSON.parse(dataEl.textContent || '[]') : [];
+
+            const modalState = window.userModalState || {};
+
+            function getModal(name) {
+                return name === 'create' ? createModal : name === 'edit' ? editModal : null;
+            }
+
+            /* ----------------------------------------------------- */
+            /* Posisikan popup di tengah area konten (tanpa sidebar)  */
+            /* ----------------------------------------------------- */
+
+            const pageEl = document.getElementById('users-page');
+
+            function centerModal(modal) {
+                const box = modal.querySelector('[data-modal-backdrop]');
+
+                if (!box || !pageEl) {
+                    return;
+                }
+
+                // Titik tengah area konten, diukur dari tepi kiri layar
+                const rect = pageEl.getBoundingClientRect();
+                const contentCenter = rect.left + rect.width / 2;
+
+                // Lebar layar yang tersedia untuk popup
+                const width = modal.clientWidth;
+
+                // 16 = padding bawaan (px-4)
+                box.style.paddingLeft =
+                    Math.max(16, 2 * contentCenter - width + 16) + 'px';
+            }
+
+            window.addEventListener('resize', function () {
+                [createModal, editModal].forEach(function (modal) {
+                    if (!modal.classList.contains('hidden')) {
+                        centerModal(modal);
+                    }
+                });
+            });
+
+            /* ----------------------------------------------------- */
+            /* Buka / tutup popup                                     */
+            /* ----------------------------------------------------- */
+
+            function openModal(modal) {
+                modal.classList.remove('hidden');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('overflow-hidden');
+
+                // Ukur setelah scrollbar halaman hilang (overflow-hidden)
+                centerModal(modal);
+            }
+
+            function closeModal(modal) {
+                modal.classList.add('hidden');
+                modal.setAttribute('aria-hidden', 'true');
+
+                const anyOpen = [createModal, editModal].some(function (item) {
+                    return !item.classList.contains('hidden');
+                });
+
+                if (!anyOpen) {
+                    document.body.classList.remove('overflow-hidden');
+                }
+            }
+
+            function closeAll() {
+                [createModal, editModal].forEach(function (modal) {
+                    modal.classList.add('hidden');
+                    modal.setAttribute('aria-hidden', 'true');
+                });
+
+                document.body.classList.remove('overflow-hidden');
+            }
+
+            /* ----------------------------------------------------- */
+            /* Popup Tambah                                           */
+            /* ----------------------------------------------------- */
+
+            function openCreate() {
+                closeAll();
+                openModal(createModal);
+
+                const name = document.getElementById('create-name');
+
+                if (name) {
+                    name.focus();
+                }
+            }
+
+            const openCreateButton = document.getElementById('open-create-user');
+
+            if (openCreateButton) {
+                openCreateButton.addEventListener('click', openCreate);
+            }
+
+            /* ----------------------------------------------------- */
+            /* Popup Edit                                             */
+            /* ----------------------------------------------------- */
+
+            function openEdit(userId) {
+                const user = users.find(function (item) {
+                    return String(item.id) === String(userId);
+                });
+
+                if (!user) {
+                    return;
+                }
+
+                closeAll();
+
+                const form = document.getElementById('edit-user-form');
+
+                form.action = form.dataset.actionTemplate.replace('__ID__', user.id);
+
+                document.getElementById('edit-user-id').value = user.id;
+                document.getElementById('edit-name').value = user.name || '';
+                document.getElementById('edit-username').value = user.username || '';
+                document.getElementById('edit-role').value = user.role || '';
+
+                openModal(editModal);
+
+                document.getElementById('edit-name').focus();
+            }
+
+            document
+                .querySelectorAll('[data-edit-user]')
+                .forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        openEdit(button.dataset.editUser);
+                    });
+                });
+
+            /* ----------------------------------------------------- */
+            /* Tutup: tombol, klik area gelap, tombol Esc             */
+            /* ----------------------------------------------------- */
+
+            document
+                .querySelectorAll('[data-close-modal]')
+                .forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        closeModal(getModal(button.dataset.closeModal));
+                    });
+                });
+
+            document
+                .querySelectorAll('[data-modal-backdrop]')
+                .forEach(function (backdrop) {
+                    backdrop.addEventListener('click', function (event) {
+                        if (event.target !== backdrop) {
+                            return;
+                        }
+
+                        closeModal(getModal(backdrop.dataset.modalBackdrop));
+                    });
+                });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closeAll();
+                }
+            });
+
+            /* ----------------------------------------------------- */
+            /* Buka lagi popup setelah validasi gagal                 */
+            /* ----------------------------------------------------- */
+
+            if (modalState.openModal === 'create') {
+                openCreate();
+            }
+
+            if (modalState.openModal === 'edit' && modalState.editId) {
+                openEdit(modalState.editId);
+
+                const old = modalState.old || {};
+                const has = function (value) {
+                    return value !== null && value !== undefined;
+                };
+
+                if (has(old.name)) {
+                    document.getElementById('edit-name').value = old.name;
+                }
+
+                if (has(old.username)) {
+                    document.getElementById('edit-username').value = old.username;
+                }
+
+                if (has(old.role)) {
+                    document.getElementById('edit-role').value = old.role;
+                }
+            }
+
+        });
+    </script>
+
+@include('partials.confirm-dialog')
+
 </x-layouts.app>
